@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>INR CLUB - Welcome</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
+        body { margin: 0; background-color: #0b0a0d; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+        .app-container { width: 100%; max-width: 430px; height: 100vh; height: 100dvh; display: flex; flex-col; justify-content: center; align-items: center; background: #16131F; position: relative; }
+        .font-casino { font-family: 'Orbitron', sans-serif; }
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 15px rgba(234, 179, 8, 0.4); } 50% { box-shadow: 0 0 30px rgba(234, 179, 8, 0.8); } }
+        .pulse-gold { animation: pulse-glow 2s infinite ease-in-out; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="absolute inset-0 bg-[url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRolRiuEyb-69IX4R9XMc2CLrZEKChtD9UUPb601RxLVWQrX86ITLDqyR6T&s=10')] bg-cover bg-center opacity-25 mix-blend-overlay"></div>
+        
+        <div class="z-10 flex flex-col items-center">
+            <div class="w-44 h-44 rounded-full border-4 border-yellow-500 bg-[#211D2B] overflow-hidden relative flex flex-col items-center justify-center pulse-gold">
+                <img src="https://images.unsplash.com/photo-1614064010375-715c0e4878f7?w=400&q=80" alt="INR CLUB Logo" class="w-full h-full object-cover" />
+            </div>
+            
+            <h1 class="mt-6 font-casino text-3xl font-extrabold tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-[#FFF7B0] to-[#CA8A04] drop-shadow-md">
+                INR CLUB
+            </h1>
+            <p class="text-[10px] text-gray-500 font-semibold tracking-widest uppercase mt-1">Premium Gaming Portal</p>
+            
+            <div class="mt-10 w-48 h-2 bg-gray-800 rounded-full overflow-hidden shadow-inner border border-gray-700 relative">
+                <div id="loading-bar" class="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-75" style="width: 0%;"></div>
+            </div>
+            <div id="loading-text" class="text-yellow-500 font-bold text-xs mt-3 font-casino">0%</div>
+        </div>
+    </div>
+
+    <script>
+        let progress = 0;
+        const bar = document.getElementById('loading-bar');
+        const text = document.getElementById('loading-text');
+        
+        const interval = setInterval(() => {
+            progress += Math.floor(Math.random() * 5) + 3;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+                bar.style.width = '100%';
+                text.textContent = '100%';
+                setTimeout(() => {
+                    window.location.replace('home.html');
+                }, 300);
+            } else {
+                bar.style.width = progress + '%';
+                text.textContent = progress + '%';
+            }
+        }, 60);
+    </script>
+</body>
+</html>
