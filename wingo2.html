@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INR CLUB - WinGo</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM UMD CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel Compiler -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Firebase App & Database SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  
+  <style>
+    body {
+      background-color: #0b0a0d;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Tactile 3D Button Bevel Styles */
+    .bevel-red {
+      background: linear-gradient(180deg, #ff7373 0%, #fd5656 45%, #b51c1c 100%);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.45), 0 4px 6px rgba(0,0,0,0.5), inset 0 -3px 0 rgba(0,0,0,0.3);
+      border: 1px solid #ff4242;
+    }
+    .bevel-green {
+      background: linear-gradient(180deg, #4df096 0%, #1fc770 45%, #0b8a45 100%);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.45), 0 4px 6px rgba(0,0,0,0.5), inset 0 -3px 0 rgba(0,0,0,0.3);
+      border: 1px solid #14b862;
+    }
+    .bevel-violet {
+      background: linear-gradient(180deg, #d38bfd 0%, #b351f9 45%, #7e23bd 100%);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.45), 0 4px 6px rgba(0,0,0,0.5), inset 0 -3px 0 rgba(0,0,0,0.3);
+      border: 1px solid #9c33e3;
+    }
+    .bevel-split-red-violet {
+      background: linear-gradient(135deg, #fd5656 50%, #b351f9 50%);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), 0 4px 6px rgba(0,0,0,0.5), inset 0 -3px 0 rgba(0,0,0,0.3);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .bevel-split-green-violet {
+      background: linear-gradient(135deg, #1fc770 50%, #b351f9 50%);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), 0 4px 6px rgba(0,0,0,0.5), inset 0 -3px 0 rgba(0,0,0,0.3);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .bevel-big {
+      background: linear-gradient(180deg, #ffc65c 0%, #f2a93b 45%, #aa6b0b 100%);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.5), 0 4px 6px rgba(0,0,0,0.5), inset 0 -3px 0 rgba(0,0,0,0.3);
+      border: 1px solid #fbb03b;
+    }
+    .bevel-small {
+      background: linear-gradient(180deg, #7ad3ff 0%, #4ba0e6 45%, #176bb0 100%);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.5), 0 4px 6px rgba(0,0,0,0.5), inset 0 -3px 0 rgba(0,0,0,0.3);
+      border: 1px solid #3ca0e6;
+    }
+    .bevel-neutral {
+      background: linear-gradient(180deg, #44404c 0%, #2a2830 50%, #18171c 100%);
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.1), 0 3px 5px rgba(0,0,0,0.4);
+      border: 1px solid #33303a;
+    }
+
+    .highlight-glow {
+      transform: scale(1.15);
+      filter: brightness(1.4) drop-shadow(0 0 12px #f59e0b);
+      border-color: #f59e0b !important;
+      z-index: 10;
+    }
+
+    /* Falling Confetti Animation keyframes */
+    @keyframes fall {
+      0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(300px) rotate(360deg); opacity: 0; }
+    }
+    .confetti {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      animation: fall 2.5s linear infinite;
+    }
+  </style>
+</head>
+<body class="flex justify-center items-start min-h-screen">
+
+  <div id="root" class="w-full max-w-md min-h-screen bg-[#17151a] text-white flex flex-col relative shadow-2xl overflow-y-auto no-scrollbar pb-16"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // --- Firebase Configuration ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCCd0sxHVTqBG3I6MhvP4mebxUS7EofkTo",
+        authDomain: "inr-club-d4500.firebaseapp.com",
+        databaseURL: "https://inr-club-d4500-default-rtdb.firebaseio.com",
+        projectId: "inr-club-d4500",
+        storageBucket: "inr-club-d4500.firebasestorage.app",
+        messagingSenderId: "496374937195",
+        appId: "1:496374937195:web:a0d7fc817e1b02fe23a32e"
+    };
+
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const database = firebase.database();
+    const activePhone = localStorage.getItem('inr_club_active_phone');
+
+    // Robust Login validation check
+    if (!activePhone) {
+        window.location.href = 'home.html';
+    }
+
+    const formatClockDigit = (val) => String(val).padStart(2, '0');
+
+    // Web Audio Synth Engine
+    class WebAudioSynth {
+      constructor() {
+        this.ctx = null;
+      }
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      playTick() {
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.frequency.setValueAtTime(850, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.08);
+      }
+      playClick() {
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.frequency.setValueAtTime(580, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+      }
+      playBeep() {
+        // Soft click beep for countdown warnings
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, this.ctx.currentTime); 
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.12);
+      }
+      playWin() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const note = (freq, start, duration) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.08, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+          osc.start(start);
+          osc.stop(start + duration);
+        };
+        note(523.25, now, 0.15); // C5
+        note(659.25, now + 0.12, 0.15); // E5
+        note(783.99, now + 0.24, 0.35); // G5
+      }
+      playLose() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const note = (freq, start, duration) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.08, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+          osc.start(start);
+          osc.stop(start + duration);
+        };
+        note(311.13, now, 0.25); // Eb4
+        note(246.94, now + 0.2, 0.5); // B3
+      }
+    }
+
+    const synth = new WebAudioSynth();
+
+    const generateHistoricalSeed = (mode, count, offsetSeconds) => {
+      const list = [];
+      let pivotTime = Math.floor(Date.now() / 1000) - offsetSeconds;
+      const interval = mode === '30s' ? 30 : mode === '1m' ? 60 : 180;
+
+      for (let i = 0; i < count; i++) {
+        const checkTime = pivotTime - (i * interval);
+        const randNum = Math.floor(Math.abs(Math.sin(checkTime)) * 10);
+        const size = randNum >= 5 ? 'Big' : 'Small';
+        let colors = [];
+        if (randNum === 0) colors = ['red', 'violet'];
+        else if (randNum === 5) colors = ['green', 'violet'];
+        else if (randNum % 2 === 0) colors = ['red'];
+        else colors = ['green'];
+
+        const date = new Date(checkTime * 1000);
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const totalIntervals = Math.floor((date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()) / interval);
+        const modeCode = mode === '30s' ? '3' : mode === '1m' ? '1' : '2';
+        const periodStr = `${yyyy}${mm}${dd}1000${modeCode}${String(totalIntervals).padStart(5, '0')}`;
+
+        list.push({ period: periodStr, number: randNum, size, colors, timestamp: checkTime });
+      }
+      return list;
+    };
+
+    function App() {
+      const [walletBalance, setWalletBalance] = useState(0);
+      const walletBalanceRef = useRef(0);
+      useEffect(() => {
+          walletBalanceRef.current = walletBalance;
+      }, [walletBalance]);
+
+      const [activeMode, setActiveMode] = useState('1m'); 
+      const [nowSeconds, setNowSeconds] = useState(Math.floor(Date.now() / 1000));
+
+      const [history30s, setHistory30s] = useState([]);
+      const [history1m, setHistory1m] = useState([]);
+      const [history3m, setHistory3m] = useState([]);
+
+      const [activeBets, setActiveBets] = useState([]);
+      const [myHistory, setMyHistory] = useState([
+        { period: '20260608100010582', selection: 'Small', amount: 100.00, status: 'Succeed', net: 180.00, time: '2026-06-08 15:42:38' },
+        { period: '20260608100010581', selection: 'Big', amount: 100.00, status: 'Failed', net: -100.00, time: '2026-06-08 15:40:20' }
+      ]);
+
+      const [toasts, setToasts] = useState([]);
+
+      // Win / Loss Popup state
+      const [resultModal, setResultModal] = useState({
+        show: false,
+        status: 'Succeed',
+        bonus: 0,
+        period: '',
+        number: 0,
+        size: '',
+        colors: []
+      });
+
+      const [autoCloseModal, setAutoCloseModal] = useState(true);
+
+      const [isRefreshing, setIsRefreshing] = useState(false);
+      const [isCycling, setIsCycling] = useState(false);
+      const [highlightedNum, setHighlightedNum] = useState(null);
+
+      // Bets Setup
+      const [betModalOpen, setBetModalOpen] = useState(false);
+      const [selectedBetType, setSelectedBetType] = useState(null);
+      const [selectedBetValue, setSelectedBetValue] = useState(null);
+
+      const [baseAmount, setBaseAmount] = useState(1);
+      const [betQuantity, setBetQuantity] = useState(1);
+      const [quickMultiplier, setQuickMultiplier] = useState('X1');
+      const [agreeTerms, setAgreeTerms] = useState(true);
+
+      const [activeTab, setActiveTab] = useState('Game history');
+
+      // Pagination States
+      const [gameHistPage, setGameHistPage] = useState(1);
+      const rowsPerPage = 10;
+
+      // Track last handled periods to prevent double-draw evaluations
+      const lastEvaluatedPeriodRef = useRef({ '30s': '', '1m': '', '3m': '' });
+      const lastBeepTimeRef = useRef(0);
+
+      // Firebase Balance synchronization
+      useEffect(() => {
+          if (!activePhone) return;
+          const userRef = database.ref('users/' + activePhone);
+          const handleValue = (snapshot) => {
+              const data = snapshot.val();
+              if (data && typeof data.balance !== 'undefined') {
+                  setWalletBalance(Number(data.balance));
+              }
+          };
+          userRef.on('value', handleValue);
+          return () => userRef.off('value', handleValue);
+      }, []);
+
+      const syncBalance = (newBalance) => {
+          setWalletBalance(newBalance);
+          if (activePhone) {
+              database.ref('users/' + activePhone).update({ balance: parseFloat(newBalance.toFixed(2)) });
+          }
+      };
+
+      // Initialize histories (offset by 1 interval to load completed draws only)
+      useEffect(() => {
+        setHistory30s(generateHistoricalSeed('30s', 50, 30));
+        setHistory1m(generateHistoricalSeed('1m', 50, 60));
+        setHistory3m(generateHistoricalSeed('3m', 50, 180));
+
+        // Sync initial reference immediately
+        lastEvaluatedPeriodRef.current = {
+          '30s': getFormattedPeriod('30s'),
+          '1m': getFormattedPeriod('1m'),
+          '3m': getFormattedPeriod('3m')
+        };
+
+        const clockInterval = setInterval(() => {
+          setNowSeconds(Math.floor(Date.now() / 1000));
+        }, 200);
+
+        return () => clearInterval(clockInterval);
+      }, []);
+
+      const addToast = (msg, type = 'success') => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, msg, type }]);
+        setTimeout(() => {
+          setToasts(prev => prev.filter(t => t.id !== id));
+        }, 2200);
+      };
+
+      // Sound alerts in the last 5 seconds of the countdown
+      const activeTimeLeft = activeMode === '30s' 
+        ? (30 - (nowSeconds % 30)) 
+        : activeMode === '1m' 
+          ? (60 - (nowSeconds % 60)) 
+          : (180 - (nowSeconds % 180));
+
+      useEffect(() => {
+        if (activeTimeLeft <= 5 && activeTimeLeft > 0 && lastBeepTimeRef.current !== nowSeconds) {
+          synth.playBeep();
+          lastBeepTimeRef.current = nowSeconds;
+        }
+      }, [activeTimeLeft, nowSeconds]);
+
+      // Handle block transitions precisely
+      useEffect(() => {
+        const processDrawEvaluation = (mode, interval, history, setHistory) => {
+          const currentPeriod = getFormattedPeriod(mode);
+          const lastPeriod = lastEvaluatedPeriodRef.current[mode];
+
+          if (lastPeriod && lastPeriod !== currentPeriod) {
+            // Draw transition triggers immediately
+            const outcome = determineNextOutcome(mode, lastPeriod);
+            
+            // Inject outcome at the top of history
+            setHistory(prev => [outcome, ...prev].slice(0, 50));
+
+            // Evaluate current bets if active mode matching
+            if (activeMode === mode) {
+              evaluateCurrentBets(outcome);
+            }
+          }
+          lastEvaluatedPeriodRef.current[mode] = currentPeriod;
+        };
+
+        if (history30s.length > 0) processDrawEvaluation('30s', 30, history30s, setHistory30s);
+        if (history1m.length > 0) processDrawEvaluation('1m', 60, history1m, setHistory1m);
+        if (history3m.length > 0) processDrawEvaluation('3m', 180, history3m, setHistory3m);
+
+      }, [nowSeconds, activeMode]);
+
+      // Game Algorithm (Admin Control + Schedule Queue + Bet-Weight Logic)
+      const determineNextOutcome = (mode, targetPeriod) => {
+        // 1. Check for Manual Multi-Period Schedule Queue first!
+        if (mode === '1m') {
+          try {
+            const queueJson = localStorage.getItem('wingo_admin_schedule_1m');
+            if (queueJson) {
+              let queue = JSON.parse(queueJson);
+              const targetIdx = queue.findIndex(item => item.period === targetPeriod);
+              if (targetIdx !== -1) {
+                const scheduledItem = queue[targetIdx];
+                
+                // Consume and remove this from queue
+                queue.splice(targetIdx, 1);
+                localStorage.setItem('wingo_admin_schedule_1m', JSON.stringify(queue));
+
+                return {
+                  period: targetPeriod,
+                  number: scheduledItem.number,
+                  size: scheduledItem.size,
+                  colors: scheduledItem.colors,
+                  timestamp: Math.floor(Date.now() / 1000)
+                };
+              }
+            }
+          } catch(e) {
+            console.error("Schedule parsing error:", e);
+          }
+        }
+
+        // 2. Legacy Manual next result fallback
+        if (mode === '1m') {
+          const controlMode = localStorage.getItem('wingo_admin_mode_1m') || 'auto';
+          if (controlMode === 'manual') {
+            const overrideJson = localStorage.getItem('wingo_admin_next_result_1m');
+            if (overrideJson) {
+              try {
+                const nextData = JSON.parse(overrideJson);
+                localStorage.removeItem('wingo_admin_next_result_1m'); // Consume override
+                return {
+                  period: targetPeriod,
+                  number: nextData.number,
+                  size: nextData.size,
+                  colors: nextData.colors,
+                  timestamp: Math.floor(Date.now() / 1000)
+                };
+              } catch(e) {}
+            }
+          }
+        }
+
+        // 3. Dynamic Underdog Balancing Algorithm (House Edge System)
+        const playerStakeOnBig = activeBets.filter(b => b.value === 'Big').reduce((acc, b) => acc + b.amount, 0);
+        const playerStakeOnSmall = activeBets.filter(b => b.value === 'Small').reduce((acc, b) => acc + b.amount, 0);
+
+        // Fetch simulated opposing bet pools (or default random if empty)
+        let simBets = { big: 0, small: 0 };
+        try {
+          const poolData = localStorage.getItem('wingo_current_bet_pool_1m');
+          if (poolData) simBets = JSON.parse(poolData);
+        } catch(e) {}
+
+        const totalBigStake = playerStakeOnBig + simBets.big;
+        const totalSmallStake = playerStakeOnSmall + simBets.small;
+
+        // Choose outcome targeting lower bet pool (Underdog wins)
+        let chosenSize = '';
+        if (totalBigStake > totalSmallStake) {
+          chosenSize = 'Small';
+        } else if (totalSmallStake > totalBigStake) {
+          chosenSize = 'Big';
+        } else {
+          chosenSize = Math.random() > 0.5 ? 'Big' : 'Small';
+        }
+
+        // Dynamic Unpredictability Profiler to counter strict patterns
+        const antiCheatSetting = localStorage.getItem('wingo_risk_profile') || 'balanced';
+        if (antiCheatSetting === 'balanced' && Math.random() < 0.25) {
+          chosenSize = Math.random() > 0.5 ? 'Big' : 'Small';
+        } else if (antiCheatSetting === 'unpredictable') {
+          chosenSize = Math.random() > 0.5 ? 'Big' : 'Small';
+        }
+
+        // Generate corresponding number, colors
+        let finalNumber = 0;
+        if (chosenSize === 'Big') {
+          const numbers = [5, 6, 7, 8, 9];
+          finalNumber = numbers[Math.floor(Math.random() * numbers.length)];
+        } else {
+          const numbers = [0, 1, 2, 3, 4];
+          finalNumber = numbers[Math.floor(Math.random() * numbers.length)];
+        }
+
+        let colors = [];
+        if (finalNumber === 0) colors = ['red', 'violet'];
+        else if (finalNumber === 5) colors = ['green', 'violet'];
+        else if (finalNumber % 2 === 0) colors = ['red'];
+        else colors = ['green'];
+
+        return {
+          period: targetPeriod,
+          number: finalNumber,
+          size: chosenSize,
+          colors,
+          timestamp: Math.floor(Date.now() / 1000)
+        };
+      };
+
+      const evaluateCurrentBets = (outcome) => {
+        if (activeBets.length === 0) return; // Only trigger popup if user actually placed a bet
+
+        let totalReturn = 0;
+        let logs = [];
+        let totalPlaced = 0;
+
+        activeBets.forEach(bet => {
+          totalPlaced += bet.amount;
+          let win = false;
+          let multiplier = 0;
+
+          if (bet.type === 'number') {
+            if (parseInt(bet.value) === outcome.number) {
+              win = true;
+              multiplier = 9;
+            }
+          } else if (bet.type === 'size') {
+            if (bet.value === outcome.size) {
+              win = true;
+              multiplier = 1.8;
+            }
+          } else if (bet.type === 'color') {
+            const selectedColor = bet.value.toLowerCase();
+            if (outcome.colors.includes(selectedColor)) {
+              win = true;
+              if (selectedColor === 'violet' || outcome.colors.includes('violet')) {
+                multiplier = 1.5;
+              } else {
+                multiplier = 1.8;
+              }
+            }
+          }
+
+          const payout = win ? bet.amount * multiplier : 0;
+          totalReturn += payout;
+
+          logs.push({
+            period: outcome.period,
+            selection: bet.value,
+            amount: bet.amount,
+            status: win ? 'Succeed' : 'Failed',
+            net: win ? payout - bet.amount : -bet.amount,
+            time: new Date().toISOString().replace('T', ' ').substring(0, 19)
+          });
+        });
+
+        const isWinningRound = totalReturn > 0;
+        
+        // Trigger Popup
+        setResultModal({
+          show: true,
+          status: isWinningRound ? 'Succeed' : 'Failed',
+          bonus: totalReturn,
+          period: outcome.period,
+          number: outcome.number,
+          size: outcome.size,
+          colors: outcome.colors
+        });
+
+        if (isWinningRound) {
+          const nextBal = parseFloat((walletBalanceRef.current + totalReturn).toFixed(2));
+          syncBalance(nextBal);
+          synth.playWin();
+          addToast(`Win: +₹${totalReturn.toFixed(2)}`, 'success');
+        } else {
+          synth.playLose();
+          addToast(`Lose: -₹${totalPlaced.toFixed(2)}`, 'error');
+        }
+
+        setMyHistory(prev => [...logs, ...prev]);
+        setActiveBets([]);
+      };
+
+      // 3-seconds auto close effect
+      useEffect(() => {
+        if (resultModal.show && autoCloseModal) {
+          const t = setTimeout(() => {
+            setResultModal(prev => ({ ...prev, show: false }));
+          }, 3000);
+          return () => clearTimeout(t);
+        }
+      }, [resultModal.show, autoCloseModal]);
+
+      const handleModeSelect = (mode) => {
+        synth.playClick();
+        setActiveMode(mode);
+        setGameHistPage(1);
+      };
+
+      const triggerWalletRefresh = () => {
+        if (isRefreshing) return;
+        synth.playClick();
+        setIsRefreshing(true);
+        addToast("Syncing account balance...", "info");
+        setTimeout(() => {
+          setIsRefreshing(false);
+          addToast("Wallet balanced synchronized!", "success");
+        }, 900);
+      };
+
+      const triggerRandomSelection = () => {
+        if (isCycling || activeTimeLeft <= 5) return;
+        synth.playClick();
+        setIsCycling(true);
+
+        let step = 0;
+        const totalSteps = 20;
+
+        const selectorTimer = setInterval(() => {
+          const randNum = step % 10;
+          setHighlightedNum(randNum);
+          synth.playTick();
+          step++;
+
+          if (step >= totalSteps) {
+            clearInterval(selectorTimer);
+            setIsCycling(false);
+            setHighlightedNum(null);
+            const finalSelection = Math.floor(Math.random() * 10);
+            openBetSheet('number', finalSelection);
+          }
+        }, 90);
+      };
+
+      const openBetSheet = (type, value) => {
+        if (activeTimeLeft <= 5) return;
+        synth.playClick();
+        setSelectedBetType(type);
+        setSelectedBetValue(value);
+        setBaseAmount(1);
+        setBetQuantity(1);
+        setQuickMultiplier('X1');
+        setBetModalOpen(true);
+      };
+
+      const executeBetPlacement = () => {
+        synth.playClick();
+        const cost = baseAmount * betQuantity;
+        if (cost > walletBalanceRef.current) {
+          addToast("Insufficient wallet balance.", "error");
+          addToast("Redirecting to deposit...", "info");
+          setTimeout(() => {
+              window.location.href = "deposit.html";
+          }, 1000);
+          return;
+        }
+
+        const nextBal = parseFloat((walletBalanceRef.current - cost).toFixed(2));
+        syncBalance(nextBal);
+        
+        const newBet = { type: selectedBetType, value: selectedBetValue, amount: cost };
+        setActiveBets(prev => [...prev, newBet]);
+        
+        // Push user bets to local storage so admin dashboard can read real-time data
+        let currentAdminBets = [];
+        try {
+          const existBets = localStorage.getItem('wingo_live_user_bets');
+          if (existBets) currentAdminBets = JSON.parse(existBets);
+        } catch(e) {}
+        currentAdminBets.push({ ...newBet, period: getFormattedPeriod(activeMode) });
+        localStorage.setItem('wingo_live_user_bets', JSON.stringify(currentAdminBets));
+
+        setBetModalOpen(false);
+        addToast(`Bet Placed: ₹${cost.toFixed(2)}`, 'success');
+      };
+
+      const handleQuickMultiplier = (mult) => {
+        synth.playClick();
+        setQuickMultiplier(mult);
+        setBetQuantity(parseInt(mult.replace('X', '')));
+      };
+
+      const getSelectionHeaderBg = () => {
+        if (selectedBetValue === 'Big') return 'bevel-big text-[#17151a]';
+        if (selectedBetValue === 'Small') return 'bevel-small text-white';
+        if (selectedBetValue === 'Green') return 'bevel-green text-white';
+        if (selectedBetValue === 'Violet') return 'bevel-violet text-white';
+        if (selectedBetValue === 'Red') return 'bevel-red text-white';
+        return 'bevel-neutral text-white';
+      };
+
+      const getBetButtonBgClass = () => {
+        if (selectedBetValue === 'Big' || selectedBetValue === 'Green' || selectedBetValue === 5 || selectedBetValue === 1 || selectedBetValue === 3 || selectedBetValue === 7 || selectedBetValue === 9) {
+          if (selectedBetValue === 'Green' || selectedBetValue === 1 || selectedBetValue === 3 || selectedBetValue === 7 || selectedBetValue === 9) return 'bg-[#1fc770] hover:bg-[#1bb062] border-t border-emerald-400';
+          if (selectedBetValue === 'Big') return 'bg-[#f2a93b] hover:bg-[#d8922c] border-t border-amber-300';
+          return 'bg-gradient-to-r from-green-500 to-purple-500';
+        }
+        if (selectedBetValue === 'Small' || selectedBetValue === 'Red' || selectedBetValue === 2 || selectedBetValue === 4 || selectedBetValue === 6 || selectedBetValue === 8) {
+          if (selectedBetValue === 'Red' || selectedBetValue === 2 || selectedBetValue === 4 || selectedBetValue === 6 || selectedBetValue === 8) return 'bg-[#fd5656] hover:bg-[#df4444] border-t border-rose-400';
+          return 'bg-[#4ba0e6] hover:bg-[#348bc9] border-t border-sky-450';
+        }
+        if (selectedBetValue === 'Violet' || selectedBetValue === 0) {
+          return 'bg-[#b351f9] hover:bg-[#973fe0] border-t border-fuchsia-400';
+        }
+        return 'bg-amber-400 text-black hover:bg-amber-500';
+      };
+
+      const getFormattedPeriod = (mode) => {
+        const interval = mode === '30s' ? 30 : mode === '1m' ? 60 : 180;
+        const date = new Date(nowSeconds * 1000);
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const totalIntervals = Math.floor((date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()) / interval);
+        const modeCode = mode === '30s' ? '3' : mode === '1m' ? '1' : '2';
+        return `${yyyy}${mm}${dd}1000${modeCode}${String(totalIntervals).padStart(5, '0')}`;
+      };
+
+      useEffect(() => {
+        if (activeTimeLeft <= 5 && betModalOpen) {
+          setBetModalOpen(false);
+          addToast("Lockout active. Popup closed.", "warning");
+        }
+      }, [activeTimeLeft, betModalOpen]);
+
+      const activeHistory = activeMode === '30s' ? history30s : activeMode === '1m' ? history1m : history3m;
+
+      // Pagination Logic
+      const totalPages = Math.ceil(activeHistory.length / rowsPerPage);
+      const paginatedHistory = activeHistory.slice(
+        (gameHistPage - 1) * rowsPerPage,
+        gameHistPage * rowsPerPage
+      );
+
+      const minStr = formatClockDigit(Math.floor(activeTimeLeft / 60));
+      const secStr = formatClockDigit(activeTimeLeft % 60);
+
+      return (
+        <div className="flex flex-col w-full relative">
+          
+          {/* Header */}
+          <div className="px-4 py-4 bg-[#1e1c24] flex items-center justify-between border-b border-gray-900/60 z-20 shadow-md">
+            
+            <div onClick={() => window.location.href = 'home.html'} className="cursor-pointer text-gray-400 hover:text-white mr-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </div>
+
+            <div className="flex items-center gap-3.5 bg-[#131116] px-8 py-2.5 rounded-full border border-gray-850/80 shadow-lg shadow-black/20 flex-1 mx-4 justify-center">
+              <span className="text-[11px] text-gray-400 font-extrabold uppercase tracking-widest">Wallet Balance:</span>
+              <span className="text-base font-black text-[#fad050] tracking-wider font-mono">₹{walletBalance.toFixed(2)}</span>
+              
+              <div 
+                onClick={triggerWalletRefresh}
+                className="cursor-pointer p-1 rounded-full hover:bg-gray-800 transition-transform ml-2"
+              >
+                <svg className="w-4.5 h-4.5 text-white hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18" />
+                </svg>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Toast Notification Container */}
+          <div className="fixed top-20 right-4 left-4 z-50 flex flex-col gap-2 pointer-events-none">
+            {toasts.map(t => (
+              <div 
+                key={t.id} 
+                className={`p-3.5 rounded-xl shadow-lg border text-xs font-bold flex justify-between items-center animate-bounce ${
+                  t.type === 'error' ? 'bg-red-950 border-red-500/30 text-red-300' :
+                  t.type === 'warning' ? 'bg-amber-950 border-amber-500/30 text-amber-300' :
+                  t.type === 'info' ? 'bg-indigo-950 border-indigo-500/30 text-indigo-300' :
+                  'bg-emerald-950 border-emerald-500/30 text-emerald-300'
+                }`}
+              >
+                <span>{t.msg}</span>
+                <span className="opacity-60 text-[9px]">● LIVE</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Time Modes Row Selector */}
+          <div className="grid grid-cols-3 gap-3.5 mx-4 mt-4">
+            {[
+              { id: '30s', label: 'WinGo', desc: '30sec' },
+              { id: '1m', label: 'WinGo', desc: '1 Min' },
+              { id: '3m', label: 'WinGo', desc: '3 Min' }
+            ].map((mode) => {
+              const isActive = activeMode === mode.id;
+              return (
+                <button
+                  key={mode.id}
+                  onClick={() => handleModeSelect(mode.id)}
+                  className={`flex flex-col items-center justify-center py-2.5 rounded-2xl border transition-all ${
+                    isActive 
+                      ? 'bg-gradient-to-b from-[#fad050] to-[#f2a93b] border-amber-500 text-black shadow-xl font-bold scale-[1.02]' 
+                      : 'bg-[#222026] border-gray-800/80 text-gray-400'
+                  }`}
+                >
+                  <span className={`text-lg mb-0.5 ${isActive ? 'text-black' : 'text-gray-500'}`}>⏱️</span>
+                  <span className="text-[10px] font-black leading-tight">{mode.label}</span>
+                  <span className="text-[9px] opacity-80">{mode.desc}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Ticket Coupon Widget */}
+          <div className="mx-4 mt-4 px-3.5 py-4 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 text-black flex justify-between items-center shadow-lg relative overflow-hidden">
+            <div className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 bg-[#17151a] rounded-full z-10"></div>
+            <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 bg-[#17151a] rounded-full z-10"></div>
+
+            {/* Left side: Forecast outcomes */}
+            <div className="flex flex-col shrink-0">
+              <span className="text-[11px] font-black text-[#564115] tracking-wide">
+                WinGo {activeMode === '30s' ? '30sec' : activeMode === '1m' ? '1 Min' : '3 Min'}
+              </span>
+              
+              <div className="flex gap-1.5 mt-2.5">
+                {activeHistory.slice(0, 5).map((item, idx) => {
+                  const isMixed = item.colors.length > 1;
+                  const circleBg = isMixed 
+                    ? (item.number === 0 ? 'bevel-split-red-violet' : 'bevel-split-green-violet') 
+                    : (item.colors[0] === 'red' ? 'bevel-red' : 'bevel-green');
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-md shrink-0 ${circleBg}`}
+                    >
+                      {item.number}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Middle Separator line */}
+            <div className="absolute left-[54%] top-0 bottom-0 border-l border-dashed border-[#8d6718]/45 hidden xs:block"></div>
+
+            {/* Right side: Countdown Timer */}
+            <div className="flex flex-col items-end shrink-0 pl-1 z-10">
+              <span className="text-[9px] font-bold text-[#5c471a] uppercase tracking-wider">Time remaining</span>
+              <div className="flex gap-0.5 mt-1.5">
+                <span className="bg-[#17151a] text-[#fad050] font-mono text-sm w-[18px] h-[25px] flex items-center justify-center rounded font-black shadow">{minStr[0]}</span>
+                <span className="bg-[#17151a] text-[#fad050] font-mono text-sm w-[18px] h-[25px] flex items-center justify-center rounded font-black shadow">{minStr[1]}</span>
+                <span className="text-[#17151a] font-extrabold text-sm self-center mx-0.5">:</span>
+                <span className="bg-[#17151a] text-[#fad050] font-mono text-sm w-[18px] h-[25px] flex items-center justify-center rounded font-black shadow">{secStr[0]}</span>
+                <span className="bg-[#17151a] text-[#fad050] font-mono text-sm w-[18px] h-[25px] flex items-center justify-center rounded font-black shadow">{secStr[1]}</span>
+              </div>
+              <span className="text-[10px] font-mono font-bold mt-2.5 text-[#543e11] tracking-wide">
+                {getFormattedPeriod(activeMode)}
+              </span>
+            </div>
+          </div>
+
+          {/* Core Selection panel */}
+          <div className="mx-4 mt-4 p-4 rounded-2xl bg-[#222026] relative border border-gray-800/80 shadow-inner">
+            
+            {/* Colors */}
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <button onClick={() => openBetSheet('color', 'Green')} className="py-2.5 rounded-tr-2xl rounded-bl-2xl bevel-green text-white font-extrabold active:scale-95 transition-transform">Green</button>
+              <button onClick={() => openBetSheet('color', 'Violet')} className="py-2.5 rounded-xl bevel-violet text-white font-extrabold active:scale-95 transition-transform">Violet</button>
+              <button onClick={() => openBetSheet('color', 'Red')} className="py-2.5 rounded-tl-2xl rounded-br-2xl bevel-red text-white font-extrabold active:scale-95 transition-transform">Red</button>
+            </div>
+
+            {/* Numbers 0-9 */}
+            <div className="grid grid-cols-5 gap-3 mb-4">
+              {[
+                { val: 0, cls: 'bevel-split-red-violet text-white' },
+                { val: 1, cls: 'bevel-green text-white' },
+                { val: 2, cls: 'bevel-red text-white' },
+                { val: 3, cls: 'bevel-green text-white' },
+                { val: 4, cls: 'bevel-red text-white' },
+                { val: 5, cls: 'bevel-split-green-violet text-white' },
+                { val: 6, cls: 'bevel-red text-white' },
+                { val: 7, cls: 'bevel-green text-white' },
+                { val: 8, cls: 'bevel-red text-white' },
+                { val: 9, cls: 'bevel-green text-white' }
+              ].map(item => {
+                const isHighlighted = highlightedNum === item.val;
+                return (
+                  <button
+                    key={item.val}
+                    onClick={() => openBetSheet('number', item.val)}
+                    className={`w-11 h-11 rounded-full flex items-center justify-center text-lg font-black transition-all ${item.cls} ${isHighlighted ? 'highlight-glow' : ''}`}
+                  >
+                    {item.val}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Quick selectors bar */}
+            <div className="flex items-center justify-between gap-1.5 mb-4 text-xs font-semibold">
+              <button 
+                onClick={triggerRandomSelection} 
+                className="flex-1 py-1.5 px-2 rounded-lg border border-amber-500/30 text-amber-400 bg-amber-950/10 hover:bg-amber-950/25 active:scale-95 transition-all text-center uppercase tracking-wider font-extrabold text-[10px]"
+              >
+                {isCycling ? 'Rolling...' : 'Random'}
+              </button>
+              {['X1', 'X5', 'X10', 'X20', 'X50', 'X100'].map((mult) => {
+                const isSelected = quickMultiplier === mult;
+                return (
+                  <button
+                    key={mult}
+                    onClick={() => handleQuickMultiplier(mult)}
+                    className={`px-1.5 py-1 text-[9px] rounded font-extrabold transition-all shrink-0 ${
+                      isSelected ? 'bg-[#fad050] text-[#17151a] font-black shadow-md' : 'bg-[#1e1b22] text-gray-400 border border-gray-850'
+                    }`}
+                  >
+                    {mult}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Big and Small Buttons */}
+            <div className="flex gap-4">
+              <button onClick={() => openBetSheet('size', 'Big')} className="flex-1 py-3.5 rounded-l-full bevel-big text-[#17151a] font-black uppercase text-xs tracking-widest active:scale-95 transition-transform">Big</button>
+              <button onClick={() => openBetSheet('size', 'Small')} className="flex-1 py-3.5 rounded-r-full bevel-small text-white font-black uppercase text-xs tracking-widest active:scale-95 transition-transform">Small</button>
+            </div>
+
+            {/* Countdown Lockdown Screen */}
+            {activeTimeLeft <= 5 && (
+              <div className="absolute inset-0 bg-[#17151ae2] rounded-2xl z-30 flex flex-col items-center justify-center border border-amber-500/10">
+                <div className="flex gap-4">
+                  <span className="bg-[#24222a] text-[#fad050] text-8xl font-black font-mono px-5 py-3 rounded-2xl shadow-xl border border-gray-800">0</span>
+                  <span className="bg-[#24222a] text-[#fad050] text-8xl font-black font-mono px-5 py-3 rounded-2xl shadow-xl border border-gray-800 animate-bounce">{activeTimeLeft}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Active Pending Bets Banner */}
+          {activeBets.length > 0 && (
+            <div className="mx-4 mt-4 p-3 bg-amber-950/20 border border-amber-500/20 rounded-xl">
+              <div className="text-[11px] font-bold text-amber-400 flex justify-between">
+                <span>🎯 Selected Predictions:</span>
+                <span>{activeBets.length} pending draw</span>
+              </div>
+              <div className="mt-1.5 space-y-1">
+                {activeBets.map((b, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-xs text-gray-300">
+                    <span>Placed on <strong class="text-white font-black">{b.value}</strong> ({b.type})</span>
+                    <span className="font-extrabold text-amber-400 font-mono">₹{b.amount.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Results Tables Tabs */}
+          <div className="mx-4 mt-5">
+            <div className="flex gap-3 border-b border-gray-850 text-sm pb-1">
+              {['Game history', 'My history'].map(tab => {
+                const isTabActive = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => { synth.playClick(); setActiveTab(tab); }}
+                    className={`flex-1 py-2 rounded-xl font-extrabold transition-all text-center text-xs ${
+                      isTabActive 
+                        ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-[#17151a] shadow font-black' 
+                        : 'bg-gray-900/40 text-gray-400 border border-gray-800/30'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Game History List (Paginated) */}
+            {activeTab === 'Game history' && (
+              <div class="mt-3">
+                <div className="overflow-x-auto no-scrollbar">
+                  <table className="w-full text-left text-xs text-gray-400">
+                    <thead>
+                      <tr className="border-b border-gray-800 text-gray-500 font-bold">
+                        <th className="py-2">Period</th>
+                        <th className="py-2 text-center">Number</th>
+                        <th className="py-2 text-center">Big Small</th>
+                        <th className="py-2 text-right">Color</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-850">
+                      {paginatedHistory.map((item, idx) => {
+                        const numberColor = item.colors[0] === 'red' ? 'text-[#fd5656]' : 'text-[#1fc770]';
+                        return (
+                          <tr key={idx} className="hover:bg-white/[0.01]">
+                            <td className="py-3 font-mono text-[10px] font-semibold">{item.period}</td>
+                            <td className="py-3 text-center font-black text-sm">
+                              <span className={numberColor}>{item.number}</span>
+                            </td>
+                            <td className="py-3 text-center">
+                              <span className={item.size === 'Big' ? 'text-[#fad050]' : 'text-cyan-400'}>{item.size}</span>
+                            </td>
+                            <td className="py-3 flex justify-end gap-1 items-center">
+                              {item.colors.map((c, ci) => (
+                                <span key={ci} className={`w-2.5 h-2.5 rounded-full inline-block shadow-inner ${c === 'red' ? 'bg-[#fd5656]' : c === 'green' ? 'bg-[#1fc770]' : 'bg-[#b351f9]'}`} />
+                              ))}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center justify-between mt-4 bg-gray-900/20 p-2 rounded-xl border border-gray-850">
+                  <button 
+                    disabled={gameHistPage === 1}
+                    onClick={() => { synth.playClick(); setGameHistPage(p => Math.max(1, p - 1)); }}
+                    className="px-3 py-1 bg-gray-850 text-xs rounded-lg border border-gray-800 text-white font-semibold disabled:opacity-40"
+                  >
+                    ❮ Prev
+                  </button>
+                  <span className="text-xs font-bold text-gray-400">Page {gameHistPage} of {totalPages}</span>
+                  <button 
+                    disabled={gameHistPage === totalPages}
+                    onClick={() => { synth.playClick(); setGameHistPage(p => Math.min(totalPages, p + 1)); }}
+                    className="px-3 py-1 bg-gray-850 text-xs rounded-lg border border-gray-800 text-white font-semibold disabled:opacity-40"
+                  >
+                    Next ❯
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* My Performance Logs */}
+            {activeTab === 'My history' && (
+              <div className="mt-3 space-y-2">
+                {myHistory.map((bet, idx) => {
+                  const isWin = bet.status === 'Succeed';
+                  return (
+                    <div key={idx} className="p-3 bg-[#222026] rounded-xl border border-gray-850 flex justify-between items-center text-xs">
+                      <div>
+                        <div className="text-[10px] text-gray-500 font-mono mb-1">{bet.period}</div>
+                        <div className="font-bold flex items-center gap-1.5">
+                          Selected: <span className="text-amber-400 uppercase font-black">{String(bet.selection)}</span>
+                        </div>
+                        <div className="text-[10px] text-gray-400 mt-1">{bet.time}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`font-extrabold text-sm ${isWin ? 'text-green-400' : 'text-red-400'}`}>
+                          {isWin ? `+₹${bet.net.toFixed(2)}` : `-₹${Math.abs(bet.net).toFixed(2)}`}
+                        </div>
+                        <div className={`text-[10px] uppercase font-black ${isWin ? 'text-green-500/70' : 'text-red-500/70'}`}>
+                          {bet.status}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Confirm Bet Modal Drawer */}
+          {betModalOpen && (
+            <div className="fixed inset-0 bg-black/65 z-50 flex items-end justify-center">
+              <div className="w-full max-w-md bg-[#222026] rounded-t-3xl border-t border-gray-800 p-5 shadow-2xl relative animate-slide-up">
+                
+                <div className="mb-5 text-center">
+                  <div className="text-[10px] text-gray-400 tracking-widest uppercase">WinGo {activeMode === '30s' ? '30s' : activeMode === '1m' ? '1 Min' : '3 Min'}</div>
+                  <div className={`mt-2 py-1.5 px-6 rounded-full inline-block font-black text-xs uppercase ${getSelectionHeaderBg()}`}>
+                    Selected: {selectedBetValue}
+                  </div>
+                </div>
+
+                {/* Base Amount Selector */}
+                <div class="mb-4">
+                  <div className="text-xs text-gray-400 mb-2 font-bold uppercase tracking-wider">Balance Selection</div>
+                  <div className="grid grid-cols-4 gap-2.5">
+                    {[1, 10, 100, 1000].map(val => (
+                      <button
+                        key={val}
+                        onClick={() => { synth.playClick(); setBaseAmount(val); }}
+                        className={`py-2 rounded-xl font-bold border transition-all text-sm ${
+                          baseAmount === val ? 'bg-[#f2a93b] text-black border-[#f2a93b]' : 'bg-[#1c1a20] text-gray-400 border-gray-800'
+                        }`}
+                      >
+                        {val}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Counter */}
+                <div className="mb-4 flex justify-between items-center">
+                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Quantity</span>
+                  <div className="flex items-center gap-1.5 bg-[#1c1a20] border border-gray-850 rounded-xl p-1.5">
+                    <button onClick={() => { synth.playClick(); setBetQuantity(q => Math.max(1, q - 1)); }} className="w-8 h-8 rounded-lg bg-gray-850 flex items-center justify-center font-bold text-lg">-</button>
+                    <input type="number" value={betQuantity} onChange={e => setBetQuantity(Math.max(1, parseInt(e.target.value) || 1))} className="w-12 bg-transparent text-center font-bold text-sm focus:outline-none" />
+                    <button onClick={() => { synth.playClick(); setBetQuantity(q => q + 1); }} className="w-8 h-8 rounded-lg bg-gray-850 flex items-center justify-center font-bold text-lg">+</button>
+                  </div>
+                </div>
+
+                {/* Quick select presets */}
+                <div className="mb-5 flex gap-2 overflow-x-auto no-scrollbar">
+                  {[1, 5, 10, 20, 50, 100].map(mult => (
+                    <button
+                      key={mult}
+                      onClick={() => { synth.playClick(); setBetQuantity(mult); }}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                        betQuantity === mult ? 'bg-amber-400 text-[#17151a] shadow-md' : 'bg-[#1c1a20] text-gray-400 border border-gray-800'
+                      }`}
+                    >
+                      X{mult}
+                    </button>
+                  ))}
+                </div>
+
+                <label className="flex items-center gap-2 mb-5 cursor-pointer text-xs text-gray-400 select-none">
+                  <input type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)} className="accent-amber-400 rounded-full w-4 h-4 bg-gray-900" />
+                  <span>I agree <span class="text-amber-450 font-bold">《Pre-sale rules》</span></span>
+                </label>
+
+                {/* Confirm / Cancel Buttons */}
+                <div className="flex gap-4">
+                  <button onClick={() => { synth.playClick(); setBetModalOpen(false); }} className="flex-1 py-3.5 rounded-xl bg-gray-900 border border-gray-850 font-bold text-gray-300">Cancel</button>
+                  <button 
+                    disabled={!agreeTerms} 
+                    onClick={executeBetPlacement} 
+                    className={`flex-1 py-3.5 rounded-xl font-black text-white disabled:opacity-45 shadow-lg active:scale-95 transition-transform ${getBetButtonBgClass()}`}
+                  >
+                    Confirm ₹{(baseAmount * betQuantity).toFixed(2)}
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* Win / Loss Result Modals */}
+          {resultModal.show && (
+            <div className="fixed inset-0 bg-black/75 z-50 flex flex-col items-center justify-center p-4">
+              
+              {/* Confetti */}
+              {resultModal.status === 'Succeed' && (
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  {[...Array(24)].map((_, i) => {
+                    const randomColor = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#a855f7'][i % 5];
+                    const leftPos = `${Math.random() * 100}%`;
+                    const delay = `${Math.random() * 2}s`;
+                    const size = `${Math.random() * 6 + 4}px`;
+                    return (
+                      <div 
+                        key={i} 
+                        className="confetti" 
+                        style={{ 
+                          backgroundColor: randomColor, 
+                          left: leftPos, 
+                          animationDelay: delay, 
+                          width: size, 
+                          height: size 
+                        }} 
+                      />
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Popup Result Card Container */}
+              <div className="w-full max-w-xs flex flex-col items-center">
+                
+                {/* Result Card */}
+                <div className={`w-full rounded-3xl p-5 text-center relative border shadow-2xl ${
+                  resultModal.status === 'Succeed' 
+                    ? 'bg-gradient-to-b from-[#ff813c] via-[#ff6b30] to-[#e0451a] border-amber-300/30 text-white' 
+                    : 'bg-gradient-to-b from-[#779cc7] via-[#5c84b3] to-[#406894] border-sky-300/30 text-white'
+                }`}>
+                  
+                  {/* Badge */}
+                  <div className="absolute -top-11 left-1/2 -translate-x-1/2 flex items-center justify-center">
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center border-4 shadow-xl bg-[#ff7b30] border-amber-400">
+                      <svg className="w-10 h-10 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Header Title */}
+                  <div className="text-2xl font-black tracking-wider mt-10 mb-4 drop-shadow-md">
+                    {resultModal.status === 'Succeed' ? 'Congratulations!' : 'Sorry'}
+                  </div>
+
+                  {/* Lottery outcomes */}
+                  <div className="bg-black/30 rounded-xl p-3 mb-4 border border-white/5 flex flex-col items-center">
+                    <span className="text-[10px] text-white/60 uppercase tracking-widest mb-1.5 font-bold">Lottery Result</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase shadow ${
+                        resultModal.colors.includes('green') ? 'bg-[#1fc770]' : 'bg-[#fd5656]'
+                      }`}>
+                        {resultModal.colors[0]}
+                      </span>
+                      {resultModal.colors.length > 1 && (
+                        <span className="text-[9px] px-2 py-0.5 rounded-full font-black uppercase shadow bg-[#b351f9]">
+                          Violet
+                        </span>
+                      )}
+                      <span className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center font-black text-xs shadow text-white border border-white/10">
+                        {resultModal.number}
+                      </span>
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase shadow ${
+                        resultModal.size === 'Big' ? 'bg-[#f2a93b] text-black' : 'bg-[#4ba0e6]'
+                      }`}>
+                        {resultModal.size}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Payout */}
+                  <div className="bg-white rounded-2xl p-4 shadow-inner text-gray-800 flex flex-col items-center">
+                    <span className="text-[10px] font-bold tracking-widest text-[#c24b23] uppercase mb-1">
+                      {resultModal.status === 'Succeed' ? 'Bonus Won' : 'Net Outcome'}
+                    </span>
+                    <div className={`text-2xl font-black tracking-tight mb-2 ${
+                      resultModal.status === 'Succeed' ? 'text-red-500' : 'text-gray-500'
+                    }`}>
+                      {resultModal.status === 'Succeed' ? `₹${resultModal.bonus.toFixed(2)}` : 'Lose'}
+                    </div>
+                    <span className="text-[10px] font-mono text-gray-500 leading-tight">
+                      Period: WinGo {activeMode === '30s' ? '30sec' : activeMode === '1m' ? '1 Min' : '3 Min'}
+                    </span>
+                    <span className="text-[9px] font-mono font-bold text-gray-400 mt-0.5">
+                      {resultModal.period}
+                    </span>
+                  </div>
+
+                  {/* Auto Close Toggle Display */}
+                  <div className="flex items-center justify-center gap-2 mt-4 text-[10px] text-white/80 font-medium">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={autoCloseModal} 
+                        onChange={(e) => setAutoCloseModal(e.target.checked)} 
+                        className="accent-amber-450 rounded border-none w-3.5 h-3.5 bg-black/20"
+                      />
+                      <span>Enable 3s Auto-Close</span>
+                    </label>
+                  </div>
+
+                </div>
+
+                {/* Close Button */}
+                <button 
+                  onClick={() => setResultModal(prev => ({ ...prev, show: false }))}
+                  className="mt-5 w-10 h-10 rounded-full bg-black/40 border border-white/20 flex items-center justify-center hover:bg-black/60 active:scale-90 transition-transform shadow-lg"
+                >
+                  <span className="text-white text-lg font-bold">✕</span>
+                </button>
+
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
