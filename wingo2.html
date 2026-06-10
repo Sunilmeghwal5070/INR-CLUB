@@ -79,6 +79,16 @@
       z-index: 10;
     }
 
+    /* Sleek Professional Lockout Countdown Pop Animation */
+    @keyframes numberPop {
+      0% { transform: scale(0.5); opacity: 0; }
+      50% { transform: scale(1.25); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .pop-timing {
+      animation: numberPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
     /* Falling Confetti Animation keyframes */
     @keyframes fall {
       0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
@@ -90,6 +100,15 @@
       height: 8px;
       border-radius: 2px;
       animation: fall 2.5s linear infinite;
+    }
+
+    /* Win/Loss Card Entrance animation */
+    @keyframes popupEntrance {
+      0% { transform: scale(0.8) translateY(30px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .animate-popup-card {
+      animation: popupEntrance 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
     }
   </style>
 </head>
@@ -125,10 +144,11 @@
 
     const formatClockDigit = (val) => String(val).padStart(2, '0');
 
-    // Web Audio Synth Engine
+    // Web Audio Synthesizer Engine (Distinct High-Volume Audio Effects)
     class WebAudioSynth {
       constructor() {
         this.ctx = null;
+        this.enabled = localStorage.getItem('wingo_sound_enabled') !== 'false';
       }
       init() {
         if (!this.ctx) {
@@ -138,45 +158,66 @@
           this.ctx.resume();
         }
       }
+      toggle(state) {
+        this.enabled = state;
+        localStorage.setItem('wingo_sound_enabled', state ? 'true' : 'false');
+      }
       playTick() {
+        if (!this.enabled) return;
         this.init();
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
         gain.connect(this.ctx.destination);
-        osc.frequency.setValueAtTime(850, this.ctx.currentTime);
-        gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(950, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime); // High volume tick
         gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.08);
       }
       playClick() {
+        if (!this.enabled) return;
         this.init();
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
         gain.connect(this.ctx.destination);
-        osc.frequency.setValueAtTime(580, this.ctx.currentTime);
-        gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.1);
-      }
-      playBeep() {
-        // Soft click beep for countdown warnings
-        this.init();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(440, this.ctx.currentTime); 
-        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(650, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.4, this.ctx.currentTime); // High volume click
         gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.12);
       }
-      playWin() {
+      playBeep() {
+        if (!this.enabled) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(520, this.ctx.currentTime); 
+        gain.gain.setValueAtTime(0.5, this.ctx.currentTime); // Highly audible lockout warning beep
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.18);
+      }
+      playBetPlaced() {
+        if (!this.enabled) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.45, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.2);
+      }
+      playPopupReveal() {
+        if (!this.enabled) return;
         this.init();
         const now = this.ctx.currentTime;
         const note = (freq, start, duration) => {
@@ -184,17 +225,39 @@
           const gain = this.ctx.createGain();
           osc.connect(gain);
           gain.connect(this.ctx.destination);
+          osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, start);
-          gain.gain.setValueAtTime(0.08, start);
+          gain.gain.setValueAtTime(0.4, start);
           gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
           osc.start(start);
           osc.stop(start + duration);
         };
-        note(523.25, now, 0.15); // C5
-        note(659.25, now + 0.12, 0.15); // E5
-        note(783.99, now + 0.24, 0.35); // G5
+        note(587.33, now, 0.2); // D5
+        note(880.00, now + 0.1, 0.35); // A5
+      }
+      playWin() {
+        if (!this.enabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        const note = (freq, start, duration) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.65, start); // Powerful win loudness
+          gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+          osc.start(start);
+          osc.stop(start + duration);
+        };
+        note(523.25, now, 0.2); // C5
+        note(659.25, now + 0.1, 0.2); // E5
+        note(783.99, now + 0.2, 0.2); // G5
+        note(1046.50, now + 0.3, 0.5); // C6 Triumphant chord
       }
       playLose() {
+        if (!this.enabled) return;
         this.init();
         const now = this.ctx.currentTime;
         const note = (freq, start, duration) => {
@@ -202,43 +265,69 @@
           const gain = this.ctx.createGain();
           osc.connect(gain);
           gain.connect(this.ctx.destination);
+          osc.type = 'sawtooth';
           osc.frequency.setValueAtTime(freq, start);
-          gain.gain.setValueAtTime(0.08, start);
+          gain.gain.setValueAtTime(0.55, start); // Highly distinct sad decay
           gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
           osc.start(start);
           osc.stop(start + duration);
         };
-        note(311.13, now, 0.25); // Eb4
-        note(246.94, now + 0.2, 0.5); // B3
+        note(349.23, now, 0.3); // F4
+        note(277.18, now + 0.25, 0.6); // C#4 Gloomy finish
       }
     }
 
     const synth = new WebAudioSynth();
 
-    const generateHistoricalSeed = (mode, count, offsetSeconds) => {
+    // UTC-based unified period calculation matching admin panel
+    const getFormattedPeriod = (mode, timeSecs) => {
+      const interval = mode === '30s' ? 30 : mode === '1m' ? 60 : 180;
+      const date = new Date(timeSecs * 1000);
+      const yyyy = date.getUTCFullYear();
+      const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const dd = String(date.getUTCDate()).padStart(2, '0');
+      const totalIntervals = Math.floor((date.getUTCHours() * 3600 + date.getUTCMinutes() * 60 + date.getUTCSeconds()) / interval);
+      const modeCode = mode === '30s' ? '3' : mode === '1m' ? '1' : '2';
+      return `${yyyy}${mm}${dd}1000${modeCode}${String(totalIntervals).padStart(5, '0')}`;
+    };
+
+    // Highly unpredictable, deterministic PRNG algorithm (Mulberry32) for auto-mode fallback
+    const getDeterministicOutcome = (mode, period) => {
+      let h = 2166136261;
+      for (let i = 0; i < period.length; i++) {
+        h = Math.imul(h ^ period.charCodeAt(i), 16777619);
+      }
+      h = h >>> 0;
+
+      const random = () => {
+        let t = h += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+
+      const finalNumber = Math.floor(random() * 10);
+      const size = finalNumber >= 5 ? 'Big' : 'Small';
+      let colors = [];
+      if (finalNumber === 0) colors = ['red', 'violet'];
+      else if (finalNumber === 5) colors = ['green', 'violet'];
+      else if (finalNumber % 2 === 0) colors = ['red'];
+      else colors = ['green'];
+
+      return { period, number: finalNumber, size, colors };
+    };
+
+    // Generate historical list dynamically to look seamless and matching
+    const generateHistoricalSeed = (mode, count, offsetSeconds, currentSyncedSecs) => {
       const list = [];
-      let pivotTime = Math.floor(Date.now() / 1000) - offsetSeconds;
+      let pivotTime = currentSyncedSecs - offsetSeconds;
       const interval = mode === '30s' ? 30 : mode === '1m' ? 60 : 180;
 
       for (let i = 0; i < count; i++) {
         const checkTime = pivotTime - (i * interval);
-        const randNum = Math.floor(Math.abs(Math.sin(checkTime)) * 10);
-        const size = randNum >= 5 ? 'Big' : 'Small';
-        let colors = [];
-        if (randNum === 0) colors = ['red', 'violet'];
-        else if (randNum === 5) colors = ['green', 'violet'];
-        else if (randNum % 2 === 0) colors = ['red'];
-        else colors = ['green'];
-
-        const date = new Date(checkTime * 1000);
-        const yyyy = date.getFullYear();
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
-        const totalIntervals = Math.floor((date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()) / interval);
-        const modeCode = mode === '30s' ? '3' : mode === '1m' ? '1' : '2';
-        const periodStr = `${yyyy}${mm}${dd}1000${modeCode}${String(totalIntervals).padStart(5, '0')}`;
-
-        list.push({ period: periodStr, number: randNum, size, colors, timestamp: checkTime });
+        const periodStr = getFormattedPeriod(mode, checkTime);
+        const outcome = getDeterministicOutcome(mode, periodStr);
+        list.push({ ...outcome, timestamp: checkTime });
       }
       return list;
     };
@@ -252,18 +341,43 @@
 
       const [activeMode, setActiveMode] = useState('1m'); 
       const [nowSeconds, setNowSeconds] = useState(Math.floor(Date.now() / 1000));
+      const [serverTimeOffset, setServerTimeOffset] = useState(0);
+      const serverTimeOffsetRef = useRef(0);
 
       const [history30s, setHistory30s] = useState([]);
       const [history1m, setHistory1m] = useState([]);
       const [history3m, setHistory3m] = useState([]);
 
       const [activeBets, setActiveBets] = useState([]);
-      const [myHistory, setMyHistory] = useState([
-        { period: '20260608100010582', selection: 'Small', amount: 100.00, status: 'Succeed', net: 180.00, time: '2026-06-08 15:42:38' },
-        { period: '20260608100010581', selection: 'Big', amount: 100.00, status: 'Failed', net: -100.00, time: '2026-06-08 15:40:20' }
-      ]);
+      
+      // Loaded from localStorage to support persistent 3-day history retention
+      const [myHistory, setMyHistory] = useState([]);
+
+      // Sound active state tracking
+      const [soundEnabled, setSoundEnabled] = useState(synth.enabled);
+
+      // Slide-out Menu options drawer
+      const [isMenuOpen, setIsMenuOpen] = useState(false);
+      const [isGuideOpen, setIsGuideOpen] = useState(false);
 
       const [toasts, setToasts] = useState([]);
+
+      // Admin controllers in-sync with Firebase RTDB [11]
+      const [adminMode1m, setAdminMode1m] = useState('auto');
+      const [adminNextResult1m, setAdminNextResult1m] = useState(null);
+      const [adminSchedule1m, setAdminSchedule1m] = useState({});
+
+      const adminModeRef = useRef('auto');
+      const adminNextResultRef = useRef(null);
+      const adminScheduleRef = useRef({});
+
+      // Global live user bets for calculating optimal minimum liability (Underdog win system)
+      const [globalLiveBets, setGlobalLiveBets] = useState([]);
+
+      useEffect(() => { adminModeRef.current = adminMode1m; }, [adminMode1m]);
+      useEffect(() => { adminNextResultRef.current = adminNextResult1m; }, [adminNextResult1m]);
+      useEffect(() => { adminScheduleRef.current = adminSchedule1m; }, [adminSchedule1m]);
+      useEffect(() => { serverTimeOffsetRef.current = serverTimeOffset; }, [serverTimeOffset]);
 
       // Win / Loss Popup state
       const [resultModal, setResultModal] = useState({
@@ -323,25 +437,83 @@
           }
       };
 
-      // Initialize histories (offset by 1 interval to load completed draws only)
+      // Listen to Global Server Time Offset
       useEffect(() => {
-        setHistory30s(generateHistoricalSeed('30s', 50, 30));
-        setHistory1m(generateHistoricalSeed('1m', 50, 60));
-        setHistory3m(generateHistoricalSeed('3m', 50, 180));
+        const offsetRef = database.ref(".info/serverTimeOffset");
+        const handleOffset = (snap) => {
+          setServerTimeOffset(snap.val() || 0);
+        };
+        offsetRef.on("value", handleOffset);
+        return () => offsetRef.off("value", handleOffset);
+      }, []);
 
-        // Sync initial reference immediately
+      // Realtime Firebase Admin configurations synchronization [11]
+      useEffect(() => {
+        const modeRef = database.ref("wingo_admin_mode_1m");
+        const nextRef = database.ref("wingo_admin_next_result_1m");
+        const schedRef = database.ref("wingo_admin_schedule_1m");
+        const globalBetsRef = database.ref("wingo_live_user_bets");
+
+        modeRef.on("value", snap => setAdminMode1m(snap.val() || "auto"));
+        nextRef.on("value", snap => setAdminNextResult1m(snap.val()));
+        schedRef.on("value", snap => setAdminSchedule1m(snap.val() || {}));
+        
+        globalBetsRef.on("value", snap => {
+          const data = snap.val();
+          if (data) {
+            setGlobalLiveBets(Object.values(data));
+          } else {
+            setGlobalLiveBets([]);
+          }
+        });
+
+        return () => {
+          modeRef.off();
+          nextRef.off();
+          schedRef.off();
+          globalBetsRef.off();
+        };
+      }, []);
+
+      // Load 3-day filtered history from localStorage
+      useEffect(() => {
+        const storedHistory = localStorage.getItem(`wingo_my_history_${activePhone}`);
+        if (storedHistory) {
+          try {
+            const parsed = JSON.parse(storedHistory);
+            const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
+            const valid = parsed.filter(item => {
+              const itemTime = new Date(item.time).getTime();
+              return itemTime >= threeDaysAgo;
+            });
+            setMyHistory(valid);
+            localStorage.setItem(`wingo_my_history_${activePhone}`, JSON.stringify(valid));
+          } catch (e) {
+            setMyHistory([]);
+          }
+        }
+      }, []);
+
+      // Initialize histories and clock using synchronized server time
+      useEffect(() => {
+        const initialSecs = Math.floor((Date.now() + serverTimeOffsetRef.current) / 1000);
+        setHistory30s(generateHistoricalSeed('30s', 50, 30, initialSecs));
+        setHistory1m(generateHistoricalSeed('1m', 50, 60, initialSecs));
+        setHistory3m(generateHistoricalSeed('3m', 50, 180, initialSecs));
+
         lastEvaluatedPeriodRef.current = {
-          '30s': getFormattedPeriod('30s'),
-          '1m': getFormattedPeriod('1m'),
-          '3m': getFormattedPeriod('3m')
+          '30s': getFormattedPeriod('30s', initialSecs),
+          '1m': getFormattedPeriod('1m', initialSecs),
+          '3m': getFormattedPeriod('3m', initialSecs)
         };
 
         const clockInterval = setInterval(() => {
-          setNowSeconds(Math.floor(Date.now() / 1000));
+          const syncedNow = Math.floor((Date.now() + serverTimeOffsetRef.current) / 1000);
+          setNowSeconds(syncedNow);
         }, 200);
 
         return () => clearInterval(clockInterval);
-      }, []);
+      }, [serverTimeOffset]);
 
       const addToast = (msg, type = 'success') => {
         const id = Date.now();
@@ -368,17 +540,13 @@
       // Handle block transitions precisely
       useEffect(() => {
         const processDrawEvaluation = (mode, interval, history, setHistory) => {
-          const currentPeriod = getFormattedPeriod(mode);
+          const currentPeriod = getFormattedPeriod(mode, nowSeconds);
           const lastPeriod = lastEvaluatedPeriodRef.current[mode];
 
           if (lastPeriod && lastPeriod !== currentPeriod) {
-            // Draw transition triggers immediately
             const outcome = determineNextOutcome(mode, lastPeriod);
-            
-            // Inject outcome at the top of history
             setHistory(prev => [outcome, ...prev].slice(0, 50));
 
-            // Evaluate current bets if active mode matching
             if (activeMode === mode) {
               evaluateCurrentBets(outcome);
             }
@@ -390,118 +558,117 @@
         if (history1m.length > 0) processDrawEvaluation('1m', 60, history1m, setHistory1m);
         if (history3m.length > 0) processDrawEvaluation('3m', 180, history3m, setHistory3m);
 
-      }, [nowSeconds, activeMode]);
+      }, [nowSeconds, activeMode, globalLiveBets]);
 
-      // Game Algorithm (Admin Control + Schedule Queue + Bet-Weight Logic)
+      // Underdog Win System (Dynamic Risk Minimization logic) across 30s, 1m, 3m
       const determineNextOutcome = (mode, targetPeriod) => {
-        // 1. Check for Manual Multi-Period Schedule Queue first!
+        // 1. Check for Active Schedule Queue on Firebase [11]
         if (mode === '1m') {
-          try {
-            const queueJson = localStorage.getItem('wingo_admin_schedule_1m');
-            if (queueJson) {
-              let queue = JSON.parse(queueJson);
-              const targetIdx = queue.findIndex(item => item.period === targetPeriod);
-              if (targetIdx !== -1) {
-                const scheduledItem = queue[targetIdx];
-                
-                // Consume and remove this from queue
-                queue.splice(targetIdx, 1);
-                localStorage.setItem('wingo_admin_schedule_1m', JSON.stringify(queue));
+          const sched = adminScheduleRef.current;
+          if (sched && sched[targetPeriod]) {
+            const scheduledItem = sched[targetPeriod];
+            database.ref(`wingo_admin_schedule_1m/${targetPeriod}`).remove();
+            return {
+              period: targetPeriod,
+              number: scheduledItem.number,
+              size: scheduledItem.size,
+              colors: scheduledItem.colors,
+              timestamp: Math.floor((Date.now() + serverTimeOffsetRef.current) / 1000)
+            };
+          }
+        }
 
-                return {
-                  period: targetPeriod,
-                  number: scheduledItem.number,
-                  size: scheduledItem.size,
-                  colors: scheduledItem.colors,
-                  timestamp: Math.floor(Date.now() / 1000)
-                };
+        // 2. Check for Immediate Force Override next result on Firebase [11]
+        if (mode === '1m') {
+          if (adminModeRef.current === 'manual' || adminNextResultRef.current) {
+            const override = adminNextResultRef.current;
+            if (override) {
+              database.ref('wingo_admin_next_result_1m').remove();
+              return {
+                period: targetPeriod,
+                number: override.number,
+                size: override.size,
+                colors: override.colors,
+                timestamp: Math.floor((Date.now() + serverTimeOffsetRef.current) / 1000)
+              };
+            }
+          }
+        }
+
+        // 3. Underdog Win Logic (Run if admin has not set result)
+        // Filter live bets specifically for this period
+        const periodBets = globalLiveBets.filter(b => b.period === targetPeriod);
+        if (periodBets.length > 0) {
+          let lowestLiabilityNum = 0;
+          let minPayoutAmount = Infinity;
+
+          // Calculate potential payouts for each number from 0 to 9
+          for (let candidateNum = 0; candidateNum <= 9; candidateNum++) {
+            let simulatedPayout = 0;
+            const size = candidateNum >= 5 ? 'Big' : 'Small';
+            let colors = [];
+            if (candidateNum === 0) colors = ['red', 'violet'];
+            else if (candidateNum === 5) colors = ['green', 'violet'];
+            else if (candidateNum % 2 === 0) colors = ['red'];
+            else colors = ['green'];
+
+            periodBets.forEach(bet => {
+              const bValue = String(bet.value).toLowerCase();
+              const bAmount = Number(bet.amount || 0);
+
+              if (bValue === String(candidateNum)) {
+                simulatedPayout += bAmount * 9; // Number matching
+              } else if (bValue === size.toLowerCase()) {
+                simulatedPayout += bAmount * 1.8; // Size matching
+              } else if (colors.includes(bValue)) {
+                if (bValue === 'violet' && (candidateNum === 0 || candidateNum === 5)) {
+                  simulatedPayout += bAmount * 1.5;
+                } else if ((bValue === 'red' || bValue === 'green') && (candidateNum === 0 || candidateNum === 5)) {
+                  simulatedPayout += bAmount * 1.5;
+                } else {
+                  simulatedPayout += bAmount * 1.8;
+                }
+              }
+            });
+
+            if (simulatedPayout < minPayoutAmount) {
+              minPayoutAmount = simulatedPayout;
+              lowestLiabilityNum = candidateNum;
+            } else if (simulatedPayout === minPayoutAmount) {
+              // Tie-breaker: use deterministic hash to keep clients identical
+              const checkOutcome = getDeterministicOutcome(mode, targetPeriod);
+              if (checkOutcome.number === candidateNum) {
+                lowestLiabilityNum = candidateNum;
               }
             }
-          } catch(e) {
-            console.error("Schedule parsing error:", e);
           }
+
+          const finalSize = lowestLiabilityNum >= 5 ? 'Big' : 'Small';
+          let finalColors = [];
+          if (lowestLiabilityNum === 0) finalColors = ['red', 'violet'];
+          else if (lowestLiabilityNum === 5) finalColors = ['green', 'violet'];
+          else if (lowestLiabilityNum % 2 === 0) finalColors = ['red'];
+          else finalColors = ['green'];
+
+          return {
+            period: targetPeriod,
+            number: lowestLiabilityNum,
+            size: finalSize,
+            colors: finalColors,
+            timestamp: Math.floor((Date.now() + serverTimeOffsetRef.current) / 1000)
+          };
         }
 
-        // 2. Legacy Manual next result fallback
-        if (mode === '1m') {
-          const controlMode = localStorage.getItem('wingo_admin_mode_1m') || 'auto';
-          if (controlMode === 'manual') {
-            const overrideJson = localStorage.getItem('wingo_admin_next_result_1m');
-            if (overrideJson) {
-              try {
-                const nextData = JSON.parse(overrideJson);
-                localStorage.removeItem('wingo_admin_next_result_1m'); // Consume override
-                return {
-                  period: targetPeriod,
-                  number: nextData.number,
-                  size: nextData.size,
-                  colors: nextData.colors,
-                  timestamp: Math.floor(Date.now() / 1000)
-                };
-              } catch(e) {}
-            }
-          }
-        }
-
-        // 3. Dynamic Underdog Balancing Algorithm (House Edge System)
-        const playerStakeOnBig = activeBets.filter(b => b.value === 'Big').reduce((acc, b) => acc + b.amount, 0);
-        const playerStakeOnSmall = activeBets.filter(b => b.value === 'Small').reduce((acc, b) => acc + b.amount, 0);
-
-        // Fetch simulated opposing bet pools (or default random if empty)
-        let simBets = { big: 0, small: 0 };
-        try {
-          const poolData = localStorage.getItem('wingo_current_bet_pool_1m');
-          if (poolData) simBets = JSON.parse(poolData);
-        } catch(e) {}
-
-        const totalBigStake = playerStakeOnBig + simBets.big;
-        const totalSmallStake = playerStakeOnSmall + simBets.small;
-
-        // Choose outcome targeting lower bet pool (Underdog wins)
-        let chosenSize = '';
-        if (totalBigStake > totalSmallStake) {
-          chosenSize = 'Small';
-        } else if (totalSmallStake > totalBigStake) {
-          chosenSize = 'Big';
-        } else {
-          chosenSize = Math.random() > 0.5 ? 'Big' : 'Small';
-        }
-
-        // Dynamic Unpredictability Profiler to counter strict patterns
-        const antiCheatSetting = localStorage.getItem('wingo_risk_profile') || 'balanced';
-        if (antiCheatSetting === 'balanced' && Math.random() < 0.25) {
-          chosenSize = Math.random() > 0.5 ? 'Big' : 'Small';
-        } else if (antiCheatSetting === 'unpredictable') {
-          chosenSize = Math.random() > 0.5 ? 'Big' : 'Small';
-        }
-
-        // Generate corresponding number, colors
-        let finalNumber = 0;
-        if (chosenSize === 'Big') {
-          const numbers = [5, 6, 7, 8, 9];
-          finalNumber = numbers[Math.floor(Math.random() * numbers.length)];
-        } else {
-          const numbers = [0, 1, 2, 3, 4];
-          finalNumber = numbers[Math.floor(Math.random() * numbers.length)];
-        }
-
-        let colors = [];
-        if (finalNumber === 0) colors = ['red', 'violet'];
-        else if (finalNumber === 5) colors = ['green', 'violet'];
-        else if (finalNumber % 2 === 0) colors = ['red'];
-        else colors = ['green'];
-
+        // 4. Default: Fallback on Deterministic, completely unpredictable Auto Mode Outcome
+        const autoOutcome = getDeterministicOutcome(mode, targetPeriod);
         return {
-          period: targetPeriod,
-          number: finalNumber,
-          size: chosenSize,
-          colors,
-          timestamp: Math.floor(Date.now() / 1000)
+          ...autoOutcome,
+          timestamp: Math.floor((Date.now() + serverTimeOffsetRef.current) / 1000)
         };
       };
 
       const evaluateCurrentBets = (outcome) => {
-        if (activeBets.length === 0) return; // Only trigger popup if user actually placed a bet
+        if (activeBets.length === 0) return;
 
         let totalReturn = 0;
         let logs = [];
@@ -543,13 +710,13 @@
             amount: bet.amount,
             status: win ? 'Succeed' : 'Failed',
             net: win ? payout - bet.amount : -bet.amount,
-            time: new Date().toISOString().replace('T', ' ').substring(0, 19)
+            time: new Date((Date.now() + serverTimeOffsetRef.current)).toISOString().replace('T', ' ').substring(0, 19)
           });
         });
 
         const isWinningRound = totalReturn > 0;
         
-        // Trigger Popup
+        synth.playPopupReveal();
         setResultModal({
           show: true,
           status: isWinningRound ? 'Succeed' : 'Failed',
@@ -560,17 +727,27 @@
           colors: outcome.colors
         });
 
-        if (isWinningRound) {
-          const nextBal = parseFloat((walletBalanceRef.current + totalReturn).toFixed(2));
-          syncBalance(nextBal);
-          synth.playWin();
-          addToast(`Win: +₹${totalReturn.toFixed(2)}`, 'success');
-        } else {
-          synth.playLose();
-          addToast(`Lose: -₹${totalPlaced.toFixed(2)}`, 'error');
-        }
+        setTimeout(() => {
+          if (isWinningRound) {
+            const nextBal = parseFloat((walletBalanceRef.current + totalReturn).toFixed(2));
+            syncBalance(nextBal);
+            synth.playWin();
+            addToast(`Win: +₹${totalReturn.toFixed(2)}`, 'success');
+          } else {
+            synth.playLose();
+            addToast(`Lose: -₹${totalPlaced.toFixed(2)}`, 'error');
+          }
+        }, 350);
 
-        setMyHistory(prev => [...logs, ...prev]);
+        const nextHistory = [...logs, ...myHistory];
+        // Automatic 3-day history retention logic
+        const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
+        const validHistory = nextHistory.filter(item => {
+          return new Date(item.time).getTime() >= threeDaysAgo;
+        });
+
+        setMyHistory(validHistory);
+        localStorage.setItem(`wingo_my_history_${activePhone}`, JSON.stringify(validHistory));
         setActiveBets([]);
       };
 
@@ -637,7 +814,7 @@
       };
 
       const executeBetPlacement = () => {
-        synth.playClick();
+        synth.playBetPlaced();
         const cost = baseAmount * betQuantity;
         if (cost > walletBalanceRef.current) {
           addToast("Insufficient wallet balance.", "error");
@@ -654,14 +831,21 @@
         const newBet = { type: selectedBetType, value: selectedBetValue, amount: cost };
         setActiveBets(prev => [...prev, newBet]);
         
-        // Push user bets to local storage so admin dashboard can read real-time data
+        // Push user bets to Firebase
         let currentAdminBets = [];
         try {
           const existBets = localStorage.getItem('wingo_live_user_bets');
           if (existBets) currentAdminBets = JSON.parse(existBets);
         } catch(e) {}
-        currentAdminBets.push({ ...newBet, period: getFormattedPeriod(activeMode) });
+        currentAdminBets.push({ ...newBet, period: getFormattedPeriod(activeMode, nowSeconds) });
         localStorage.setItem('wingo_live_user_bets', JSON.stringify(currentAdminBets));
+
+        database.ref('wingo_live_user_bets').push({
+          ...newBet,
+          phone: activePhone,
+          period: getFormattedPeriod(activeMode, nowSeconds),
+          timestamp: Date.now()
+        });
 
         setBetModalOpen(false);
         addToast(`Bet Placed: ₹${cost.toFixed(2)}`, 'success');
@@ -698,23 +882,17 @@
         return 'bg-amber-400 text-black hover:bg-amber-500';
       };
 
-      const getFormattedPeriod = (mode) => {
-        const interval = mode === '30s' ? 30 : mode === '1m' ? 60 : 180;
-        const date = new Date(nowSeconds * 1000);
-        const yyyy = date.getFullYear();
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
-        const totalIntervals = Math.floor((date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()) / interval);
-        const modeCode = mode === '30s' ? '3' : mode === '1m' ? '1' : '2';
-        return `${yyyy}${mm}${dd}1000${modeCode}${String(totalIntervals).padStart(5, '0')}`;
+      const toggleSound = () => {
+        const nextState = !soundEnabled;
+        setSoundEnabled(nextState);
+        synth.toggle(nextState);
+        synth.playClick();
       };
 
-      useEffect(() => {
-        if (activeTimeLeft <= 5 && betModalOpen) {
-          setBetModalOpen(false);
-          addToast("Lockout active. Popup closed.", "warning");
-        }
-      }, [activeTimeLeft, betModalOpen]);
+      const triggerExit = () => {
+        synth.playClick();
+        window.location.href = 'home.html';
+      };
 
       const activeHistory = activeMode === '30s' ? history30s : activeMode === '1m' ? history1m : history3m;
 
@@ -728,31 +906,49 @@
       const minStr = formatClockDigit(Math.floor(activeTimeLeft / 60));
       const secStr = formatClockDigit(activeTimeLeft % 60);
 
+      // Calculates total winning amount in My History for active logs
+      const totalWinAmount = myHistory
+        .filter(item => item.status === 'Succeed')
+        .reduce((sum, item) => sum + item.net, 0);
+
       return (
         <div className="flex flex-col w-full relative">
           
           {/* Header */}
           <div className="px-4 py-4 bg-[#1e1c24] flex items-center justify-between border-b border-gray-900/60 z-20 shadow-md">
             
-            <div onClick={() => window.location.href = 'home.html'} className="cursor-pointer text-gray-400 hover:text-white mr-2">
+            <div onClick={triggerExit} className="cursor-pointer text-gray-400 hover:text-white mr-2">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
             </div>
 
-            <div className="flex items-center gap-3.5 bg-[#131116] px-8 py-2.5 rounded-full border border-gray-850/80 shadow-lg shadow-black/20 flex-1 mx-4 justify-center">
-              <span className="text-[11px] text-gray-400 font-extrabold uppercase tracking-widest">Wallet Balance:</span>
+            {/* Wallet Balance Widget with Gold Refresh Icon */}
+            <div className="flex items-center gap-3.5 bg-[#131116] px-6 py-2.5 rounded-full border border-gray-850/80 shadow-lg shadow-black/20 flex-1 mx-2 justify-center">
+              <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest">Wallet:</span>
               <span className="text-base font-black text-[#fad050] tracking-wider font-mono">₹{walletBalance.toFixed(2)}</span>
               
               <div 
                 onClick={triggerWalletRefresh}
-                className="cursor-pointer p-1 rounded-full hover:bg-gray-800 transition-transform ml-2"
+                className="cursor-pointer p-1 rounded-full hover:bg-gray-800 transition-transform ml-1 text-[#fad050]"
               >
-                <svg className="w-4.5 h-4.5 text-white hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4.5 h-4.5 hover:text-amber-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18" />
                 </svg>
               </div>
             </div>
+
+            {/* Menu Options Button */}
+            <button 
+              onClick={() => { synth.playClick(); setIsMenuOpen(true); }}
+              className="text-gray-400 hover:text-white p-1 ml-2"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </button>
 
           </div>
 
@@ -805,7 +1001,6 @@
             <div className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 bg-[#17151a] rounded-full z-10"></div>
             <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 bg-[#17151a] rounded-full z-10"></div>
 
-            {/* Left side: Forecast outcomes */}
             <div className="flex flex-col shrink-0">
               <span className="text-[11px] font-black text-[#564115] tracking-wide">
                 WinGo {activeMode === '30s' ? '30sec' : activeMode === '1m' ? '1 Min' : '3 Min'}
@@ -829,10 +1024,8 @@
               </div>
             </div>
 
-            {/* Middle Separator line */}
             <div className="absolute left-[54%] top-0 bottom-0 border-l border-dashed border-[#8d6718]/45 hidden xs:block"></div>
 
-            {/* Right side: Countdown Timer */}
             <div className="flex flex-col items-end shrink-0 pl-1 z-10">
               <span className="text-[9px] font-bold text-[#5c471a] uppercase tracking-wider">Time remaining</span>
               <div className="flex gap-0.5 mt-1.5">
@@ -843,7 +1036,7 @@
                 <span className="bg-[#17151a] text-[#fad050] font-mono text-sm w-[18px] h-[25px] flex items-center justify-center rounded font-black shadow">{secStr[1]}</span>
               </div>
               <span className="text-[10px] font-mono font-bold mt-2.5 text-[#543e11] tracking-wide">
-                {getFormattedPeriod(activeMode)}
+                {getFormattedPeriod(activeMode, nowSeconds)}
               </span>
             </div>
           </div>
@@ -915,12 +1108,14 @@
               <button onClick={() => openBetSheet('size', 'Small')} className="flex-1 py-3.5 rounded-r-full bevel-small text-white font-black uppercase text-xs tracking-widest active:scale-95 transition-transform">Small</button>
             </div>
 
-            {/* Countdown Lockdown Screen */}
+            {/* Sleek Professional Lockout Overlay Backdrop */}
             {activeTimeLeft <= 5 && (
-              <div className="absolute inset-0 bg-[#17151ae2] rounded-2xl z-30 flex flex-col items-center justify-center border border-amber-500/10">
-                <div className="flex gap-4">
-                  <span className="bg-[#24222a] text-[#fad050] text-8xl font-black font-mono px-5 py-3 rounded-2xl shadow-xl border border-gray-800">0</span>
-                  <span className="bg-[#24222a] text-[#fad050] text-8xl font-black font-mono px-5 py-3 rounded-2xl shadow-xl border border-gray-800 animate-bounce">{activeTimeLeft}</span>
+              <div className="absolute inset-0 bg-[#0f0e13eb] backdrop-blur-sm rounded-2xl z-30 flex flex-col items-center justify-center border border-amber-500/10">
+                <div className="text-center">
+                  <div className="text-[10px] text-amber-500/60 font-black tracking-widest uppercase mb-2">DRAWING OUTCOME</div>
+                  <div key={activeTimeLeft} className="pop-timing text-9xl font-black text-amber-400 font-mono tracking-wider drop-shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+                    {activeTimeLeft}
+                  </div>
                 </div>
               </div>
             )}
@@ -936,7 +1131,7 @@
               <div className="mt-1.5 space-y-1">
                 {activeBets.map((b, idx) => (
                   <div key={idx} className="flex justify-between items-center text-xs text-gray-300">
-                    <span>Placed on <strong class="text-white font-black">{b.value}</strong> ({b.type})</span>
+                    <span>Placed on <strong className="text-white font-black">{b.value}</strong> ({b.type})</span>
                     <span className="font-extrabold text-amber-400 font-mono">₹{b.amount.toFixed(2)}</span>
                   </div>
                 ))}
@@ -967,7 +1162,7 @@
 
             {/* Game History List (Paginated) */}
             {activeTab === 'Game history' && (
-              <div class="mt-3">
+              <div className="mt-3">
                 <div className="overflow-x-auto no-scrollbar">
                   <table className="w-full text-left text-xs text-gray-400">
                     <thead>
@@ -1023,31 +1218,49 @@
               </div>
             )}
 
-            {/* My Performance Logs */}
+            {/* My Performance Logs (Unpreloaded, Filtered 3 Days Retention) */}
             {activeTab === 'My history' && (
               <div className="mt-3 space-y-2">
-                {myHistory.map((bet, idx) => {
-                  const isWin = bet.status === 'Succeed';
-                  return (
-                    <div key={idx} className="p-3 bg-[#222026] rounded-xl border border-gray-850 flex justify-between items-center text-xs">
-                      <div>
-                        <div className="text-[10px] text-gray-500 font-mono mb-1">{bet.period}</div>
-                        <div className="font-bold flex items-center gap-1.5">
-                          Selected: <span className="text-amber-400 uppercase font-black">{String(bet.selection)}</span>
+                
+                {/* Real-time Summary Card showing Total Win Amount */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-emerald-700/5 border border-emerald-500/25 flex justify-between items-center shadow-md">
+                  <div>
+                    <div className="text-[10px] text-emerald-400 uppercase tracking-widest font-black">History Summary</div>
+                    <div className="text-sm text-gray-300 font-bold mt-0.5">Total Profit Winnings</div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-black text-emerald-400 font-mono">₹{totalWinAmount.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {myHistory.length === 0 ? (
+                  <div className="py-12 text-center text-gray-500 font-medium text-xs">
+                    No betting logs found. Place your prediction to record data!
+                  </div>
+                ) : (
+                  myHistory.map((bet, idx) => {
+                    const isWin = bet.status === 'Succeed';
+                    return (
+                      <div key={idx} className="p-3 bg-[#222026] rounded-xl border border-gray-850 flex justify-between items-center text-xs">
+                        <div>
+                          <div className="text-[10px] text-gray-500 font-mono mb-1">{bet.period}</div>
+                          <div className="font-bold flex items-center gap-1.5">
+                            Selected: <span className="text-amber-400 uppercase font-black">{String(bet.selection)}</span>
+                          </div>
+                          <div className="text-[10px] text-gray-400 mt-1">{bet.time}</div>
                         </div>
-                        <div className="text-[10px] text-gray-400 mt-1">{bet.time}</div>
+                        <div className="text-right">
+                          <div className={`font-extrabold text-sm ${isWin ? 'text-green-400' : 'text-red-400'}`}>
+                            {isWin ? `+₹${bet.net.toFixed(2)}` : `-₹${Math.abs(bet.net).toFixed(2)}`}
+                          </div>
+                          <div className={`text-[10px] uppercase font-black ${isWin ? 'text-green-500/70' : 'text-red-500/70'}`}>
+                            {bet.status}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className={`font-extrabold text-sm ${isWin ? 'text-green-400' : 'text-red-400'}`}>
-                          {isWin ? `+₹${bet.net.toFixed(2)}` : `-₹${Math.abs(bet.net).toFixed(2)}`}
-                        </div>
-                        <div className={`text-[10px] uppercase font-black ${isWin ? 'text-green-500/70' : 'text-red-500/70'}`}>
-                          {bet.status}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             )}
           </div>
@@ -1065,7 +1278,7 @@
                 </div>
 
                 {/* Base Amount Selector */}
-                <div class="mb-4">
+                <div className="mb-4">
                   <div className="text-xs text-gray-400 mb-2 font-bold uppercase tracking-wider">Balance Selection</div>
                   <div className="grid grid-cols-4 gap-2.5">
                     {[1, 10, 100, 1000].map(val => (
@@ -1109,7 +1322,7 @@
 
                 <label className="flex items-center gap-2 mb-5 cursor-pointer text-xs text-gray-400 select-none">
                   <input type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)} className="accent-amber-400 rounded-full w-4 h-4 bg-gray-900" />
-                  <span>I agree <span class="text-amber-450 font-bold">《Pre-sale rules》</span></span>
+                  <span>I agree <span className="text-amber-450 font-bold">《Pre-sale rules》</span></span>
                 </label>
 
                 {/* Confirm / Cancel Buttons */}
@@ -1128,11 +1341,11 @@
             </div>
           )}
 
-          {/* Win / Loss Result Modals */}
+          {/* Win / Loss Result Modals with Custom Visual Card URL structures */}
           {resultModal.show && (
-            <div className="fixed inset-0 bg-black/75 z-50 flex flex-col items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/85 z-50 flex flex-col items-center justify-center p-4">
               
-              {/* Confetti */}
+              {/* Confetti Particle effects on Victory */}
               {resultModal.status === 'Succeed' && (
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                   {[...Array(24)].map((_, i) => {
@@ -1157,84 +1370,94 @@
                 </div>
               )}
 
-              {/* Popup Result Card Container */}
-              <div className="w-full max-w-xs flex flex-col items-center">
+              {/* Popup Result Card Container with Win.png & Loss.png backdrops */}
+              <div className="w-full max-w-xs flex flex-col items-center animate-popup-card">
                 
-                {/* Result Card */}
-                <div className={`w-full rounded-3xl p-5 text-center relative border shadow-2xl ${
+                <div className={`w-full rounded-3xl p-5 text-center relative border shadow-2xl overflow-hidden bg-cover bg-center ${
                   resultModal.status === 'Succeed' 
-                    ? 'bg-gradient-to-b from-[#ff813c] via-[#ff6b30] to-[#e0451a] border-amber-300/30 text-white' 
-                    : 'bg-gradient-to-b from-[#779cc7] via-[#5c84b3] to-[#406894] border-sky-300/30 text-white'
-                }`}>
+                    ? 'border-amber-300/30 text-white' 
+                    : 'border-sky-300/30 text-white'
+                }`} style={{
+                  backgroundImage: resultModal.status === 'Succeed' ? "url('Win.png')" : "url('loss.png')",
+                  backgroundColor: resultModal.status === 'Succeed' ? '#4c1a06' : '#141e30'
+                }}>
                   
-                  {/* Badge */}
-                  <div className="absolute -top-11 left-1/2 -translate-x-1/2 flex items-center justify-center">
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center border-4 shadow-xl bg-[#ff7b30] border-amber-400">
-                      <svg className="w-10 h-10 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                    </div>
-                  </div>
+                  {/* Overlay to ensure details are readable */}
+                  <div className="absolute inset-0 bg-black/40 z-0"></div>
 
-                  {/* Header Title */}
-                  <div className="text-2xl font-black tracking-wider mt-10 mb-4 drop-shadow-md">
-                    {resultModal.status === 'Succeed' ? 'Congratulations!' : 'Sorry'}
-                  </div>
-
-                  {/* Lottery outcomes */}
-                  <div className="bg-black/30 rounded-xl p-3 mb-4 border border-white/5 flex flex-col items-center">
-                    <span className="text-[10px] text-white/60 uppercase tracking-widest mb-1.5 font-bold">Lottery Result</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase shadow ${
-                        resultModal.colors.includes('green') ? 'bg-[#1fc770]' : 'bg-[#fd5656]'
+                  <div className="relative z-10">
+                    {/* Badge */}
+                    <div className="flex items-center justify-center mb-4">
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 shadow-xl ${
+                        resultModal.status === 'Succeed' ? 'bg-[#ff7b30] border-amber-400' : 'bg-[#5c84b3] border-sky-300'
                       }`}>
-                        {resultModal.colors[0]}
-                      </span>
-                      {resultModal.colors.length > 1 && (
-                        <span className="text-[9px] px-2 py-0.5 rounded-full font-black uppercase shadow bg-[#b351f9]">
-                          Violet
+                        <svg className="w-8 h-8 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Header Title */}
+                    <div className="text-2xl font-black tracking-wider mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                      {resultModal.status === 'Succeed' ? 'Congratulations!' : 'Sorry'}
+                    </div>
+
+                    {/* Lottery outcomes */}
+                    <div className="bg-black/60 rounded-xl p-3 mb-4 border border-white/10 flex flex-col items-center">
+                      <span className="text-[10px] text-white/70 uppercase tracking-widest mb-1.5 font-bold">Lottery Result</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase shadow ${
+                          resultModal.colors.includes('green') ? 'bg-[#1fc770]' : 'bg-[#fd5656]'
+                        }`}>
+                          {resultModal.colors[0]}
                         </span>
-                      )}
-                      <span className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center font-black text-xs shadow text-white border border-white/10">
-                        {resultModal.number}
+                        {resultModal.colors.length > 1 && (
+                          <span className="text-[9px] px-2 py-0.5 rounded-full font-black uppercase shadow bg-[#b351f9]">
+                            Violet
+                          </span>
+                        )}
+                        <span className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center font-black text-xs shadow text-white border border-white/10">
+                          {resultModal.number}
+                        </span>
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase shadow ${
+                          resultModal.size === 'Big' ? 'bg-[#f2a93b] text-black' : 'bg-[#4ba0e6]'
+                        }`}>
+                          {resultModal.size}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Payout Details Container */}
+                    <div className="bg-white rounded-2xl p-4 shadow-inner text-gray-850 flex flex-col items-center">
+                      <span className="text-[10px] font-bold tracking-widest text-[#c24b23] uppercase mb-1">
+                        {resultModal.status === 'Succeed' ? 'Bonus Won' : 'Net Outcome'}
                       </span>
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase shadow ${
-                        resultModal.size === 'Big' ? 'bg-[#f2a93b] text-black' : 'bg-[#4ba0e6]'
+                      <div className={`text-2xl font-black tracking-tight mb-2 ${
+                        resultModal.status === 'Succeed' ? 'text-emerald-600' : 'text-rose-600'
                       }`}>
-                        {resultModal.size}
+                        {resultModal.status === 'Succeed' ? `₹${resultModal.bonus.toFixed(2)}` : 'Lose'}
+                      </div>
+                      <span className="text-[10px] font-mono text-gray-500 leading-tight">
+                        WinGo {activeMode === '30s' ? '30sec' : activeMode === '1m' ? '1 Min' : '3 Min'}
+                      </span>
+                      <span className="text-[9px] font-mono font-bold text-gray-400 mt-0.5">
+                        {resultModal.period}
                       </span>
                     </div>
-                  </div>
 
-                  {/* Payout */}
-                  <div className="bg-white rounded-2xl p-4 shadow-inner text-gray-800 flex flex-col items-center">
-                    <span className="text-[10px] font-bold tracking-widest text-[#c24b23] uppercase mb-1">
-                      {resultModal.status === 'Succeed' ? 'Bonus Won' : 'Net Outcome'}
-                    </span>
-                    <div className={`text-2xl font-black tracking-tight mb-2 ${
-                      resultModal.status === 'Succeed' ? 'text-red-500' : 'text-gray-500'
-                    }`}>
-                      {resultModal.status === 'Succeed' ? `₹${resultModal.bonus.toFixed(2)}` : 'Lose'}
+                    {/* Auto Close Toggle Display */}
+                    <div className="flex items-center justify-center gap-2 mt-4 text-[10px] text-white/90 font-medium drop-shadow-md">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={autoCloseModal} 
+                          onChange={(e) => setAutoCloseModal(e.target.checked)} 
+                          className="accent-amber-450 rounded border-none w-3.5 h-3.5 bg-black/20"
+                        />
+                        <span>Enable 3s Auto-Close</span>
+                      </label>
                     </div>
-                    <span className="text-[10px] font-mono text-gray-500 leading-tight">
-                      Period: WinGo {activeMode === '30s' ? '30sec' : activeMode === '1m' ? '1 Min' : '3 Min'}
-                    </span>
-                    <span className="text-[9px] font-mono font-bold text-gray-400 mt-0.5">
-                      {resultModal.period}
-                    </span>
-                  </div>
 
-                  {/* Auto Close Toggle Display */}
-                  <div className="flex items-center justify-center gap-2 mt-4 text-[10px] text-white/80 font-medium">
-                    <label className="flex items-center gap-1.5 cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={autoCloseModal} 
-                        onChange={(e) => setAutoCloseModal(e.target.checked)} 
-                        className="accent-amber-450 rounded border-none w-3.5 h-3.5 bg-black/20"
-                      />
-                      <span>Enable 3s Auto-Close</span>
-                    </label>
                   </div>
 
                 </div>
@@ -1247,6 +1470,85 @@
                   <span className="text-white text-lg font-bold">✕</span>
                 </button>
 
+              </div>
+            </div>
+          )}
+
+          {/* Slide-out Settings Options Drawer */}
+          {isMenuOpen && (
+            <div className="fixed inset-0 bg-black/75 z-50 flex items-end justify-center">
+              <div className="w-full max-w-md bg-[#222026] rounded-t-3xl border-t border-gray-800 p-5 shadow-2xl relative">
+                
+                <div className="flex justify-between items-center mb-6">
+                  <span className="text-sm font-black uppercase tracking-wider text-amber-400">Settings & Rules</span>
+                  <button 
+                    onClick={() => { synth.playClick(); setIsMenuOpen(false); }}
+                    className="text-gray-400 hover:text-white text-lg font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Sound FX Switch Toggle */}
+                  <div className="p-3.5 rounded-2xl bg-[#1c1a20] border border-gray-850 flex justify-between items-center">
+                    <div>
+                      <span className="text-xs font-bold block">Game Music & Sound FX</span>
+                      <span className="text-[10px] text-gray-500">Loud synthesizer alerts</span>
+                    </div>
+                    <button 
+                      onClick={toggleSound}
+                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                        soundEnabled ? 'bg-amber-400 text-black' : 'bg-gray-900 text-gray-500 border border-gray-800'
+                      }`}
+                    >
+                      {soundEnabled ? '🔊 ON' : '🔇 OFF'}
+                    </button>
+                  </div>
+
+                  {/* How To Play Button */}
+                  <button 
+                    onClick={() => { synth.playClick(); setIsGuideOpen(true); }}
+                    className="w-full p-3.5 rounded-2xl bg-[#1c1a20] border border-gray-850 flex justify-between items-center text-left text-xs font-bold hover:bg-[#2a2830]"
+                  >
+                    <span>📖 How To Play Game</span>
+                    <span className="text-amber-400 text-base">❯</span>
+                  </button>
+
+                  {/* Exit Game Button */}
+                  <button 
+                    onClick={triggerExit}
+                    className="w-full p-3.5 rounded-2xl bg-rose-950/20 border border-rose-900/30 flex justify-between items-center text-left text-xs font-black text-rose-400 hover:bg-rose-950/40"
+                  >
+                    <span>🚪 Exit Game Session</span>
+                    <span>❯</span>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* Guide Overlay Modal */}
+          {isGuideOpen && (
+            <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4">
+              <div className="w-full max-w-xs bg-[#222026] rounded-3xl border border-gray-800 p-5 space-y-4 shadow-2xl">
+                <div className="text-center">
+                  <span className="text-base font-black text-amber-400 block uppercase tracking-wider">How to Play</span>
+                  <div className="text-xs text-gray-400 leading-relaxed text-left mt-3.5 space-y-2.5 max-h-60 overflow-y-auto no-scrollbar">
+                    <p>1. **Prediction Options**: Predict outcomes based on colors (Green, Red, Violet), sizes (Big, Small), or individual numbers from 0 to 9.</p>
+                    <p>2. **Color Multipliers**: Green or Red pays **1.8x** value. Violet pays a massive **4.5x** value.</p>
+                    <p>3. **Exact Numbers**: Predict the exact winning lottery digit correctly to take home a massive **9x** reward payout.</p>
+                    <p>4. **Size Options**: Big (digits 5 to 9) and Small (digits 0 to 4) pay out a stable **1.8x** returns.</p>
+                    <p>5. **Underdog Payout Guarantee**: If no admin result is locked, our server computes and selects the outcome containing the least overall risk stake to maximize house compliance [11].</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => { synth.playClick(); setIsGuideOpen(false); }}
+                  className="w-full py-2.5 rounded-xl bg-amber-400 text-black font-black text-xs"
+                >
+                  Got It
+                </button>
               </div>
             </div>
           )}
