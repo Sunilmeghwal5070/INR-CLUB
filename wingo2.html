@@ -906,11 +906,6 @@
       const minStr = formatClockDigit(Math.floor(activeTimeLeft / 60));
       const secStr = formatClockDigit(activeTimeLeft % 60);
 
-      // Calculates total winning amount in My History for active logs
-      const totalWinAmount = myHistory
-        .filter(item => item.status === 'Succeed')
-        .reduce((sum, item) => sum + item.net, 0);
-
       return (
         <div className="flex flex-col w-full relative">
           
@@ -1221,17 +1216,6 @@
             {/* My Performance Logs (Unpreloaded, Filtered 3 Days Retention) */}
             {activeTab === 'My history' && (
               <div className="mt-3 space-y-2">
-                
-                {/* Real-time Summary Card showing Total Win Amount */}
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-emerald-700/5 border border-emerald-500/25 flex justify-between items-center shadow-md">
-                  <div>
-                    <div className="text-[10px] text-emerald-400 uppercase tracking-widest font-black">History Summary</div>
-                    <div className="text-sm text-gray-300 font-bold mt-0.5">Total Profit Winnings</div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-lg font-black text-emerald-400 font-mono">₹{totalWinAmount.toFixed(2)}</span>
-                  </div>
-                </div>
 
                 {myHistory.length === 0 ? (
                   <div className="py-12 text-center text-gray-500 font-medium text-xs">
@@ -1247,13 +1231,16 @@
                           <div className="font-bold flex items-center gap-1.5">
                             Selected: <span className="text-amber-400 uppercase font-black">{String(bet.selection)}</span>
                           </div>
-                          <div className="text-[10px] text-gray-400 mt-1">{bet.time}</div>
+                          <div className="text-[10px] text-gray-400 mt-1">
+                            Bet Amount: <span className="text-white font-bold">₹{(bet.amount || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="text-[9px] text-gray-500 mt-0.5">{bet.time}</div>
                         </div>
                         <div className="text-right">
                           <div className={`font-extrabold text-sm ${isWin ? 'text-green-400' : 'text-red-400'}`}>
-                            {isWin ? `+₹${bet.net.toFixed(2)}` : `-₹${Math.abs(bet.net).toFixed(2)}`}
+                            {isWin ? `+₹${((bet.amount || 0) + bet.net).toFixed(2)}` : `-₹${Math.abs(bet.net).toFixed(2)}`}
                           </div>
-                          <div className={`text-[10px] uppercase font-black ${isWin ? 'text-green-500/70' : 'text-red-500/70'}`}>
+                          <div className={`text-[10px] uppercase font-black mt-0.5 ${isWin ? 'text-green-500/70' : 'text-red-500/70'}`}>
                             {bet.status}
                           </div>
                         </div>
