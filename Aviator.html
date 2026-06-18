@@ -293,6 +293,26 @@
                 }
             }, [balance, gameState]);
 
+            // NEW CODE: Function to push game history to Firebase for home.html
+            const pushGameHistoryToFirebase = (betAmount, winAmount, status, multiplier) => {
+                if (!activePhone) return;
+                const userGamesHistoryRef = database.ref(`users/${activePhone}/history/games`);
+                const uniqueKey = Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                const netAmt = status === 'Succeed' ? (winAmount - betAmount) : -betAmount;
+                const periodStr = Math.floor(Date.now() / 1000).toString().slice(-6); 
+
+                userGamesHistoryRef.child(uniqueKey).set({
+                    game: 'Aviator',
+                    period: periodStr,
+                    selection: status === 'Succeed' ? `${multiplier}x` : 'Lost',
+                    amount: betAmount,
+                    status: status,
+                    net: netAmt,
+                    date: new Date().toLocaleString(),
+                    timestamp: Date.now()
+                });
+            };
+
             // RIGGED ALGORITHM
             const generateRiggedCrashPoint = () => {
                 const isUserActive = panels.some(p => p.isBettingNext || (p.autoBet && balanceRef.current >= p.betAmount));
@@ -448,6 +468,10 @@
                                 spawnParachute(`https://api.dicebear.com/7.x/bottts/svg?seed=user`);
                                 playSound('win');
                                 updated = true;
+                                
+                                // NEW CODE: Push Win History for Auto Cashout
+                                pushGameHistoryToFirebase(p.betAmount, exactWin, 'Succeed', p.autoCashOutVal.toFixed(2));
+
                                 return { ...p, inFlight: false, cashedOut: true, winAmount: exactWin };
                             }
                         }
@@ -500,7 +524,12 @@
                 setHistory(prev => [exactCrash, ...prev].slice(0, 30));
                 
                 setPanels(prev => prev.map(p => {
-                    if (p.inFlight && !p.cashedOut) { return { ...p, inFlight: false }; }
+                    if (p.inFlight && !p.cashedOut) { 
+                        // NEW CODE: Push Lose History
+                        pushGameHistoryToFirebase(p.betAmount, 0, 'Failed', exactCrash.toFixed(2));
+                        
+                        return { ...p, inFlight: false }; 
+                    }
                     return p;
                 }));
 
@@ -533,6 +562,9 @@
                         spawnParachute(`https://api.dicebear.com/7.x/bottts/svg?seed=user`);
                         playSound('win');
                         
+                        // NEW CODE: Push Win History for Manual Cashout
+                        pushGameHistoryToFirebase(p.betAmount, exactWin, 'Succeed', mult.toFixed(2));
+
                         p.inFlight = false;
                         p.cashedOut = true;
                         p.winAmount = exactWin;
