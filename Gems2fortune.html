@@ -522,6 +522,26 @@
                 });
             };
 
+            // NEW CODE: PUSH GAME HISTORY TO FIREBASE
+            const pushGameHistoryToFirebase = (betAmt, winAmt, status, multiplierText) => {
+                if (!activePhone) return;
+                const userGamesHistoryRef = database.ref(`users/${activePhone}/history/games`);
+                const uniqueKey = Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                const netAmt = status === 'Succeed' ? (winAmt - betAmt) : -betAmt;
+                const periodStr = Math.floor(Date.now() / 1000).toString().slice(-6); 
+
+                userGamesHistoryRef.child(uniqueKey).set({
+                    game: 'Fortune Gems 2',
+                    period: periodStr,
+                    selection: status === 'Succeed' ? multiplierText : 'Lost',
+                    amount: betAmt,
+                    status: status,
+                    net: netAmt,
+                    date: new Date().toLocaleString(),
+                    timestamp: Date.now()
+                });
+            };
+
             React.useEffect(() => {
                 const initStrips = currentReels.map(col => { let arr = [...col]; while(arr.length<15) arr.push(col[0]); return arr; });
                 setStrips(initStrips);
@@ -585,6 +605,10 @@
                                 setTimeout(() => {
                                     fx.playMixExplosion(); fx.playWin();
                                     updateBalance(finalWin);
+                                    
+                                    // PUSH WIN TO FIREBASE
+                                    pushGameHistoryToFirebase(bet, finalWin, 'Succeed', `${multiplierObj.mult}x`);
+
                                     triggerShake(600); fx.createCoinShower();
                                     setWinInfo({ amount: finalWin, bannerY: bannerY, flash: true });
                                     setMultAnim(null); 
@@ -592,10 +616,19 @@
                                 }, 600);
                             }, 200); 
                         } else {
-                            fx.playWin(); updateBalance(finalWin); setTimeout(() => completeSpin(true), 1200);
+                            fx.playWin(); updateBalance(finalWin); 
+                            
+                            // PUSH WIN TO FIREBASE
+                            pushGameHistoryToFirebase(bet, finalWin, 'Succeed', `1x`);
+
+                            setTimeout(() => completeSpin(true), 1200);
                         }
                     }, 1000); 
-                } else { completeSpin(false); }
+                } else { 
+                    // PUSH LOSS TO FIREBASE
+                    pushGameHistoryToFirebase(bet, 0, 'Failed', '0x');
+                    completeSpin(false); 
+                }
             };
 
             const completeSpin = (won) => {
