@@ -350,12 +350,11 @@
             }
 
             // 4. Generous mode for losing streak or new game (streak === 0)
-            // This prevents chicken from dying in first step immediately, keeping players engaged!
             if (diff === 'Easy') {
                 return 3 + Math.floor(Math.random() * 6); // step 3 to 8
             }
             if (diff === 'Medium') {
-                if (r < 0.15) return 2; // only 15% chance to crash at step 2, 0% on step 1
+                if (r < 0.15) return 2; // only 15% chance to crash at step 2
                 return 3 + Math.floor(Math.random() * 4); // step 3 to 6
             }
             if (diff === 'Hard') {
@@ -433,6 +432,26 @@
                 if (activePhone) {
                     database.ref('users/' + activePhone).update({ balance: parseFloat(newBalance.toFixed(2)) });
                 }
+            };
+
+            // NEW CODE: Function to push game history to Firebase for home.html
+            const pushGameHistoryToFirebase = (betAmt, winAmt, status, multiplier) => {
+                if (!activePhone) return;
+                const userGamesHistoryRef = database.ref(`users/${activePhone}/history/games`);
+                const uniqueKey = Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                const netAmt = status === 'Succeed' ? (winAmt - betAmt) : -betAmt;
+                const periodStr = Math.floor(Date.now() / 1000).toString().slice(-6); 
+
+                userGamesHistoryRef.child(uniqueKey).set({
+                    game: 'Chicken Road',
+                    period: periodStr,
+                    selection: status === 'Succeed' ? `${multiplier}x` : 'Lost',
+                    amount: betAmt,
+                    status: status,
+                    net: netAmt,
+                    date: new Date().toLocaleString(),
+                    timestamp: Date.now()
+                });
             };
 
             // Splash Progress Animation (0 to 100)
@@ -525,6 +544,9 @@
                         setConsecutiveWins(0);
                         try { localStorage.setItem('cr2_consecutive_wins', '0'); } catch(e){}
 
+                        // NEW CODE: Push Loss History to Firebase
+                        pushGameHistoryToFirebase(betAmount, 0, 'Failed', 0);
+
                         setTimeout(() => { setGameState('idle'); setStep(0); }, 3500); 
                     } else {
                         setCurrentMultiplier(getNextMult(difficulty, nextStep - 1));
@@ -550,6 +572,9 @@
                     return next;
                 });
                 
+                // NEW CODE: Push Win History to Firebase
+                pushGameHistoryToFirebase(betAmount, win, 'Succeed', currentMultiplier.toFixed(2));
+
                 setTimeout(() => { setWinNotif(null); setGameState('idle'); setStep(0); }, 3000);
             };
 
