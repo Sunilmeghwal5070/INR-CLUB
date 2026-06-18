@@ -407,6 +407,26 @@
                 localStorage.setItem('mc_targetStreak_final', targetStreak.toString());
             }, [targetStreak]);
 
+            // NEW CODE: Function to push game history to Firebase for home.html
+            const pushGameHistoryToFirebase = (betAmt, winAmt, status, multiplierText) => {
+                if (!activePhone) return;
+                const userGamesHistoryRef = database.ref(`users/${activePhone}/history/games`);
+                const uniqueKey = Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                const netAmt = status === 'Succeed' ? (winAmt - betAmt) : -betAmt;
+                const periodStr = Math.floor(Date.now() / 1000).toString().slice(-6); 
+
+                userGamesHistoryRef.child(uniqueKey).set({
+                    game: 'Money Coming',
+                    period: periodStr,
+                    selection: status === 'Succeed' ? multiplierText : 'Lost',
+                    amount: betAmt,
+                    status: status,
+                    net: netAmt,
+                    date: new Date().toLocaleString(),
+                    timestamp: Date.now()
+                });
+            };
+
             const changeBetDirectly = (amount) => {
                 audio.playClick();
                 setBet(amount);
@@ -548,6 +568,11 @@
                         setTargetStreak(Math.floor(Math.random() * 4) + 2); 
                     } else {
                         handleHighlightAndWin(r1, r2, r3, bR, calculatedFinalWin);
+                        
+                        // NEW CODE: Push Spin Result to Firebase History
+                        const status = calculatedFinalWin > 0 ? 'Succeed' : 'Failed';
+                        const multiplierText = calculatedFinalWin > 0 ? `${(calculatedFinalWin / bet).toFixed(2)}x` : '0x';
+                        pushGameHistoryToFirebase(bet, calculatedFinalWin, status, multiplierText);
                     }
 
                 }, 1500);
@@ -585,6 +610,10 @@
                 
                 // Add Wheel Win Balance to Firebase instantly
                 syncBalance(b => b + wheelAmount);
+
+                // NEW CODE: Push Wheel Bonus Result to Firebase History
+                const multiplierText = `${(wheelAmount / bet).toFixed(2)}x (Wheel)`;
+                pushGameHistoryToFirebase(bet, wheelAmount, 'Succeed', multiplierText);
 
                 setTimeout(() => setWinPopup({ show: false, amount: 0 }), 2500);
             };
