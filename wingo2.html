@@ -714,6 +714,27 @@
           });
         });
 
+        // ---------------------------------------------------------
+        // ADDED CODE: PUSH GAME HISTORY TO FIREBASE
+        // ---------------------------------------------------------
+        if (activePhone) {
+            const userGamesHistoryRef = database.ref(`users/${activePhone}/history/games`);
+            logs.forEach(log => {
+                const uniqueKey = Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                userGamesHistoryRef.child(uniqueKey).set({
+                    game: 'WinGo ' + activeMode, 
+                    period: log.period,
+                    selection: log.selection,
+                    amount: log.amount,
+                    status: log.status,
+                    net: log.net,
+                    date: log.time,
+                    timestamp: Date.now()
+                });
+            });
+        }
+        // ---------------------------------------------------------
+
         const isWinningRound = totalReturn > 0;
         
         synth.playPopupReveal();
