@@ -614,6 +614,28 @@
                 });
             };
 
+            // NEW CODE: Function to push game history to Firebase for home.html
+            const pushGameHistoryToFirebase = (betAmt, winAmt) => {
+                if (!activePhone) return;
+                const userGamesHistoryRef = database.ref(`users/${activePhone}/history/games`);
+                const uniqueKey = Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                const status = winAmt > 0 ? 'Succeed' : 'Failed';
+                const netAmt = winAmt > 0 ? (winAmt - betAmt) : -betAmt;
+                const multiplierText = winAmt > 0 ? `${(winAmt / betAmt).toFixed(2)}x` : '0x';
+                const periodStr = Math.floor(Date.now() / 1000).toString().slice(-6); 
+
+                userGamesHistoryRef.child(uniqueKey).set({
+                    game: 'Fortune Gems',
+                    period: periodStr,
+                    selection: status === 'Succeed' ? multiplierText : 'Lost',
+                    amount: betAmt,
+                    status: status,
+                    net: netAmt,
+                    date: new Date().toLocaleString(),
+                    timestamp: Date.now()
+                });
+            };
+
             React.useEffect(() => {
                 const startEngine = () => fx.init();
                 window.addEventListener('pointerdown', startEngine, { once: true });
@@ -762,6 +784,10 @@
                         setWinData({ msg: "BIG WIN!", amount: accumWin });
                     }
                     
+                    // --- NEW CODE: PUSH GAME HISTORY TO FIREBASE ---
+                    pushGameHistoryToFirebase(bet, accumWin);
+                    // -----------------------------------------------
+
                     setIsSpinning(false);
                     isSpinningRef.current = false;
 
